@@ -1,0 +1,6 @@
+npm init
+npm i express, mongoose, doteny, nodemon, body-parser
+
+create .env
+    PORT = 8000
+    MONGO_URL = mongodb://localhost:27017

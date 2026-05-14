@@ -10,6 +10,10 @@ const stationLocationsSchema = new mongoose.Schema({
         type: Number, // Reference to the Brand collection
         required: false
     },
+    stationAddress: {
+        type: String,
+        required: false
+    },
     stationLong: {
         type: String,
         required: false

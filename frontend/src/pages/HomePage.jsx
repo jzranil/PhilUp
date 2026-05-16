@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { FaBars, FaBell, FaFacebookSquare, FaInstagramSquare, FaLinkedin, FaSearch, FaUserCircle } from "react-icons/fa";
+import { FaSquareXTwitter } from "react-icons/fa6";
 
 // Asset imports
 import philUpLogo from "../assets/Phil Up 2.png";
@@ -11,8 +13,6 @@ import petronLogo from "../assets/PetronLogo.png";
 import shellLogo from "../assets/ShellLogo.png";
 import image1 from "../assets/image1.png";
 import image1NoBg from "../assets/image1nobg.png";
-import image from "../assets/image.png";
-import imageNoBg from "../assets/imagenobg.png";
 
 // Mock station data for UI (replace with real API calls)
 const MOCK_NEAREST = [
@@ -61,7 +61,6 @@ export default function HomePage() {
   const [activeSearchTab, setActiveSearchTab] = useState("results"); // results | nearest | topVisits | favorites
   const [isLoggedIn] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
-  const [userCoords, setUserCoords] = useState(null);
   const [mapSrc, setMapSrc] = useState("");
   const [navZ, setNavZ] = useState(300);
 
@@ -95,7 +94,6 @@ export default function HomePage() {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
-          setUserCoords({ lat: latitude, lng: longitude });
           setLocationGranted(true);
           setMapSrc(
             `https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d13758.385273920467!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sgas%20station!5e0!3m2!1sen!2sph!4v1746668755734!5m2!1sen!2sph`
@@ -222,15 +220,17 @@ export default function HomePage() {
             <button
               onClick={toggleMenu}
               className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer"
+              aria-label="Open menu"
             >
-              <i className="fa-solid fa-bars" />
+              <FaBars />
             </button>
             <div className="flex flex-row flex-nowrap justify-between items-center" style={{ width: "17.5vw" }}>
               <button
                 onClick={handleSearchIcon}
                 className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer"
+                aria-label="Search stations"
               >
-                <i className="fa-solid fa-search" />
+                <FaSearch />
               </button>
               <input
                 type="text"
@@ -257,22 +257,16 @@ export default function HomePage() {
             style={{ width: "25vw", height: "5vw" }}
           >
             <div className="flex flex-row flex-nowrap justify-around items-center" style={{ width: "10vw" }}>
-              <button className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer">
-                <i className="fa-solid fa-bell" />
+              <button className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer" aria-label="Notifications">
+                <FaBell />
               </button>
               <button
                 onClick={toggleSettings}
                 className="flex items-center justify-center bg-transparent border-none cursor-pointer"
                 style={{ width: "3vw", height: "3vw" }}
+                aria-label="Open profile menu"
               >
-                {/* <img
-                  src=""
-                  alt="Profile"
-                  style={{
-                    width: "2.5vw", height: "2.5vw", margin: "0.5vw",
-                    backgroundColor: "#a1e3f9", borderRadius: "50%",
-                  }}
-                /> */}
+                <FaUserCircle className="text-[2.3vw] text-[#1c618c]" />
               </button>
             </div>
           </div>
@@ -599,17 +593,17 @@ export default function HomePage() {
             </div>
             <div style={{ color: "#1c618c", width: "25vw" }}>
               <div style={{ display: "flex", gap: "1vw", fontSize: "2vw", marginBottom: "1vw" }}>
-                <i className="fa-brands fa-square-facebook fa-2xl" />
-                <i className="fa-brands fa-square-instagram fa-2xl" />
-                <i className="fa-brands fa-linkedin fa-2xl" />
-                <i className="fa-brands fa-square-x-twitter fa-2xl" />
+                <FaFacebookSquare />
+                <FaInstagramSquare />
+                <FaLinkedin />
+                <FaSquareXTwitter />
               </div>
               <p>
                 <a href="#" style={{ color: "#1c618c" }}>Terms &amp; Conditions</a>
                 {" - "}
                 <a href="#" style={{ color: "#1c618c" }}>Privacy Policy</a>
               </p>
-              <p>2025 © PhillUp Philippines, All Rights Reserved</p>
+              <p>2025 (c) PhilUp Philippines, All Rights Reserved</p>
             </div>
           </div>
 

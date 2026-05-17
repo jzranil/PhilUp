@@ -14,14 +14,15 @@
     "url": "git+https://github.com/jzranil/PhilUp.git"
   },
   "license": "ISC",
-  "author": "Navarro & Comampany",
-  "type": "commonjs",
+  "author": "Navarro & Company",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mongoose": "^9.6.2"

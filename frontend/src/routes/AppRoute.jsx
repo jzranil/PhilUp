@@ -11,6 +11,12 @@ import AdminUsers from "../pages/admin/AdminUsers";
 import AdminLocationRequestPage from "../pages/admin/AdminLocationRequestPage";
 import AdminPriceRequestPage from "../pages/admin/AdminPriceRequestPage";
 import AdminReports from "../pages/admin/AdminReports";
+import AdminAdmins from "../pages/admin/AdminAdmins";
+import AdminRegisteredLocations from "../pages/admin/AdminRegisteredLocations";
+import AdminGasPrices from "../pages/admin/AdminGasPrices";
+import AdminApprovals from "../pages/admin/AdminApprovals";
+import AdminAdminLog from "../pages/admin/AdminAdminLog";
+import AdminUserLog from "../pages/admin/AdminUserLog";
 
 const AppRoutes = () => {
   return (
@@ -26,6 +32,13 @@ const AppRoutes = () => {
         <Route path="/upload-location" element={<UploadLocationPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/registered-users" element={<AdminUsers />} />
+        <Route path="/admin/admins" element={<AdminAdmins />} />
+        <Route path="/admin/registered-locations" element={<AdminRegisteredLocations />} />
+        <Route path="/admin/gas-prices" element={<AdminGasPrices />} />
+        <Route path="/admin/approvals" element={<AdminApprovals />} />
+        <Route path="/admin/admin-log" element={<AdminAdminLog />} />
+        <Route path="/admin/user-log" element={<AdminUserLog />} />
         <Route path="/admin/location-requests" element={<AdminLocationRequestPage />} />
         <Route path="/admin/price-requests" element={<AdminPriceRequestPage />} />
         <Route path="/admin/reports" element={<AdminReports />} />

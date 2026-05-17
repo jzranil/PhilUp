@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const userInfosSchema = new mongoose.Schema({
-    userID: { 
-        type: String, 
-        required: false, 
-        unique: true 
+    userPermissionLevel:{
+        type: Number,
+        required: false,
+        default: 0 // Good practice to set default here rather than just the controller
     },
     userFName: { 
         type: String, 
@@ -40,11 +40,10 @@ const userInfosSchema = new mongoose.Schema({
         required: false 
     }
 }, { 
-    // Automatically manages dateCreated and dateUpdatedt)
     timestamps: { 
         createdAt: 'dateCreated', 
         updatedAt: 'dateUpdated' 
     } 
 });
 
-const UserInfo = mongoose.model('UserInfo', userInfosSchema);
+export default mongoose.model('UserInfo', userInfosSchema);

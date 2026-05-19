@@ -1,17 +1,20 @@
 import express from "express";
 import {
-  createUserInfo,
-  deleteUserInfo,
-  getAllUserInfo,
-  getUserById,
-  updateUserInfo,
-  updateUserPermission // <-- 1. Import the new function
-} from "../controllers/userInfoController.js";
+createUserInfo,
+deleteUserInfo,
+getAllUserInfo,
+getUserById,
+updateUserInfo,
+updateUserPermission,
+loginUser
+}
+from "../controllers/userInfoController.js";
 
 const route = express.Router();
 
 // General User routes
 route.post("/users", createUserInfo);
+route.post("/login",loginUser);
 route.get("/users", getAllUserInfo);
 route.get("/users/:id", getUserById);
 route.put("/users/:id", updateUserInfo); // For updating name, address, etc.

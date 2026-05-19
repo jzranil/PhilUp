@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { FaBars, FaBell, FaFacebookSquare, FaInstagramSquare, FaLinkedin, FaSearch, FaUserCircle } from "react-icons/fa";
 import { FaSquareXTwitter } from "react-icons/fa6";
+import { useNavigate } from "react-router-dom";
+import BurgerDropdown from "../components/BurgerDropdown";
+import { getSessionUser, logoutSession } from "../utils/session";
 
 // Asset imports
 import philUpLogo from "../assets/Phil Up 2.png";
@@ -45,21 +48,48 @@ const GasPriceDigits = ({ digits = "00.00" }) => {
 
 const StationCard = ({ brandLogo, stationAdd, onSelect }) => (
   <div
-    className="flex items-center gap-4 flex-wrap cursor-pointer hover:opacity-80 transition-opacity py-2"
+    className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+    style={{
+      gap: "clamp(12px, 1.2vw, 18px)",
+      padding: "clamp(10px, 1vw, 14px) 0",
+      borderBottom: "1px solid #1c618c18",
+    }}
     onClick={onSelect}
   >
-    <img className="w-[7vw] h-[8vh] object-contain" src={brandLogo} alt="logo" />
-    <p className="w-[30vw] text-[1.2vw] font-mono text-[#3178ad]">{stationAdd}</p>
+    <img
+      src={brandLogo}
+      alt="logo"
+      style={{
+        width: "clamp(48px, 5vw, 72px)",
+        height: "clamp(48px, 5vw, 72px)",
+        objectFit: "contain",
+        flexShrink: 0,
+      }}
+    />
+    <p
+      className="font-mono text-[#3178ad]"
+      style={{
+        fontSize: "clamp(12px, 1vw, 15px)",
+        lineHeight: 1.45,
+        flex: 1,
+      }}
+    >
+      {stationAdd}
+    </p>
   </div>
 );
 
 export default function HomePage() {
+  const navigate = useNavigate();
+
+ const user = getSessionUser();
+ const isLoggedIn = !!user;
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchTab, setActiveSearchTab] = useState("results"); // results | nearest | topVisits | favorites
-  const [isLoggedIn] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
   const [mapSrc, setMapSrc] = useState("");
   const [navZ, setNavZ] = useState(300);
@@ -138,6 +168,53 @@ export default function HomePage() {
     else openSearch("results");
   };
 
+  const goToLocations = () => {
+    setMenuOpen(false);
+    setSettingsOpen(false);
+    setSearchOpen(false);
+    document.body.style.overflowY = "scroll";
+    navigate("/locations");
+  };
+
+  const burgerActions = {
+"Top Lowest": () => {
+  setMenuOpen(false);
+},
+"Most Visited": () => {
+  setMenuOpen(false);
+  openSearch("topVisits");
+},
+  Locations: goToLocations,
+Nearest: () => {
+  setMenuOpen(false);
+  openSearch("nearest");
+},
+
+[user?.userName]: () => {
+   setMenuOpen(false);
+   navigate("/profile");
+},
+
+  "Switch as Admin": () => {
+  setMenuOpen(false);
+
+  if(user?.userPermissionLevel > 0){
+      navigate("/admin");
+  }
+},
+
+  "Log Out": () => {
+  setMenuOpen(false);
+  logoutSession();
+  navigate("/login");
+},
+
+ "Log In": () => {
+    setMenuOpen(false);
+    navigate("/login");
+}
+};
+
   const filteredStations = MOCK_NEAREST.filter((s) =>
     s.stationAdd.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -203,6 +280,87 @@ export default function HomePage() {
           transform: translate(0vw, -55vw);
           clip-path: polygon(0 16%, 100% 16%, 100% 100%, 0% 100%);
         }
+
+        .home-search-panel {
+          position: fixed;
+          left: 50%;
+          top: clamp(112px, 12vw, 168px);
+          transform: translateX(-50%);
+          z-index: 301;
+          width: calc(100vw - 5vw);
+          max-width: 1500px;
+          max-height: calc(100vh - clamp(132px, 14vw, 190px));
+          overflow-y: auto;
+          box-sizing: border-box;
+          border: 0.25vw solid #1c618c;
+          border-radius: 1vw;
+          background-color: #fffbf4;
+          padding: clamp(18px, 2.2vw, 34px);
+          font-family: "Roboto Mono", monospace;
+          box-shadow: 0 18px 40px rgba(28, 97, 140, 0.16);
+        }
+
+        .home-search-grid {
+          display: flex;
+          align-items: stretch;
+          gap: clamp(22px, 3vw, 46px);
+        }
+
+        .home-search-left {
+          flex: 0 0 min(48%, 520px);
+          min-width: 0;
+        }
+
+        .home-search-right {
+          flex: 1;
+          min-width: 320px;
+          color: #1c618c;
+        }
+
+        .home-search-title {
+          color: #1c618c;
+          font-weight: 700;
+          font-size: clamp(18px, 1.8vw, 28px);
+          line-height: 1.2;
+          margin-bottom: clamp(12px, 1.2vw, 18px);
+        }
+
+        .home-search-section + .home-search-section {
+          margin-top: clamp(22px, 2.2vw, 34px);
+        }
+
+        .home-search-empty {
+          color: #3178ad;
+          font-size: clamp(12px, 1vw, 15px);
+          line-height: 1.5;
+          padding: 10px 0 14px;
+        }
+
+        .home-search-map {
+          width: 100%;
+          height: clamp(320px, 46vh, 520px);
+          border-radius: 1vw;
+          border: 0.25vw solid #1c618c;
+          display: block;
+        }
+
+        @media (max-width: 900px) {
+          .home-search-panel {
+            top: clamp(96px, 18vw, 150px);
+            width: 92vw;
+          }
+
+          .home-search-grid {
+            flex-direction: column;
+          }
+
+          .home-search-left,
+          .home-search-right {
+            flex: 1 1 auto;
+            min-width: 0;
+            width: 100%;
+          }
+        }
       `}</style>
 
       {/* ====== FIXED NAVBAR ====== */}
@@ -216,7 +374,7 @@ export default function HomePage() {
           style={{ padding: "1.5vw 2.5vw 0 2.5vw" }}
         >
           {/* Left: Hamburger + Search */}
-          <div className="flex flex-row flex-nowrap justify-around items-center" style={{ width: "25vw", height: "5vw" }}>
+          <div className="flex flex-row flex-nowrap justify-around items-center" style={{ width: "25vw", height: "5vw", position: "relative" }}>
             <button
               onClick={toggleMenu}
               className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer"
@@ -224,7 +382,29 @@ export default function HomePage() {
             >
               <FaBars />
             </button>
-            <div className="flex flex-row flex-nowrap justify-between items-center" style={{ width: "17.5vw" }}>
+{menuOpen && (
+  <BurgerDropdown
+    items={[
+      "Top Lowest",
+      "Most Visited",
+      "Locations",
+      "Nearest",
+
+      ...(isLoggedIn
+        ? [
+            user?.userName,
+            
+            ...(user?.userPermissionLevel > 0
+              ? ["Switch as Admin"]
+              : []),
+
+            "Log Out",
+          ]
+        : ["Log In"]),
+    ]}
+    actions={burgerActions}
+  />
+)}            <div className="flex flex-row flex-nowrap justify-between items-center" style={{ width: "17.5vw" }}>
               <button
                 onClick={handleSearchIcon}
                 className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer"
@@ -246,9 +426,24 @@ export default function HomePage() {
 
           {/* Center: Logo */}
           <div className="flex justify-center items-center" >
-            <a className="absolute" href="/" style={{ marginTop: "5vw", zIndex: searchOpen ? 500 : "inherit" }}>
-              <img src={philUpLogo} alt="Phil Up" style={{ width: "12.5vw", height: "12.5vw" }} />
-            </a>
+            <div
+  className="absolute"
+  onClick={() => navigate("/")}
+  style={{
+    marginTop:"5vw",
+    zIndex: searchOpen ? 500 : "inherit",
+    cursor:"pointer"
+  }}
+>
+  <img
+    src={philUpLogo}
+    alt="Phil Up"
+    style={{
+      width:"12.5vw",
+      height:"12.5vw"
+    }}
+  />
+</div>
           </div>
 
           {/* Right: Bell + Profile */}
@@ -292,123 +487,129 @@ export default function HomePage() {
 
         {/* Hidden Search Panel */}
         {searchOpen && (
-          <div
-            style={{
-              position: "fixed", fontFamily: '"Roboto Mono", monospace',
-              marginLeft: "-0.25vw", overflowX: "hidden", boxSizing: "border-box",
-              zIndex: 301, width: "93vw", height: "80vh",
-              border: "0.25vw solid #1c618c", borderTop: "none",
-              borderRadius: "0 0 1vw 1vw", backgroundColor: "#fffbf4",
-              padding: "3vw", display: "flex", overflowY: "scroll",
-              gap: "3vw",
-            }}
-          >
-            {/* Left Panel */}
-            <div style={{ width: "45vw" }}>
-              {/* Results */}
-              <div style={{ marginBottom: "1rem" }}>
-                {searchQuery && filteredStations.map((s) => (
-                  <StationCard key={s.fuelLocID} brandLogo={s.brandLogo} stationAdd={s.stationAdd} onSelect={() => {}} />
-                ))}
-              </div>
+          <div className="home-search-panel">
+            <div className="home-search-grid">
+              {/* Left Panel */}
+              <div className="home-search-left">
+                <section className="home-search-section">
+                  <h1 className="home-search-title">Results</h1>
+                  {searchQuery ? (
+                    filteredStations.length > 0 ? (
+                      filteredStations.map((s) => (
+                        <StationCard key={s.fuelLocID} brandLogo={s.brandLogo} stationAdd={s.stationAdd} onSelect={() => {}} />
+                      ))
+                    ) : (
+                      <p className="home-search-empty">No stations match your search.</p>
+                    )
+                  ) : (
+                    <p className="home-search-empty">Search for a station to show matching results.</p>
+                  )}
+                </section>
 
-              {/* Stations Nearby */}
-              {activeSearchTab === "nearest" && (
-                <div>
-                  <div className="text-[#1c618c]"><h1>Stations Nearby</h1></div>
+                <section className="home-search-section">
+                  <h1 className="home-search-title">Stations Nearby</h1>
                   {MOCK_NEAREST.map((s) => (
                     <StationCard key={s.fuelLocID} brandLogo={s.brandLogo} stationAdd={s.stationAdd} onSelect={() => {}} />
                   ))}
-                </div>
-              )}
+                </section>
 
               {/* Top Visits */}
               {activeSearchTab === "topVisits" && (
-                <div>
-                  <div className="text-[#1c618c]"><h1>Top Visits</h1></div>
+                <section className="home-search-section">
+                  <h1 className="home-search-title">Top Visits</h1>
                   {MOCK_TOP_VISITS.map((s) => (
                     <StationCard key={s.fuelLocID} brandLogo={s.brandLogo} stationAdd={s.stationAdd} onSelect={() => {}} />
                   ))}
-                </div>
+                </section>
               )}
 
               {/* Favorites */}
               {activeSearchTab === "favorites" && (
-                <div>
-                  <div className="text-[#1c618c]"><h1>Favorites</h1></div>
-                  <p className="text-[#3178ad] font-mono text-[1.2vw]">Log in to see your favorites.</p>
-                </div>
+                <section className="home-search-section">
+                  <h1 className="home-search-title">Favorites</h1>
+                  <p className="home-search-empty">Log in to see your favorites.</p>
+                </section>
               )}
             </div>
 
             {/* Right Panel — Map */}
-            <div style={{ color: "#1c618c", position: "fixed", right: "5vw" }}>
-              <h1>Stations Near You</h1>
-              <div style={{ width: "40vw" }}>
+              <section className="home-search-right">
+                <h1 className="home-search-title">Stations Near You</h1>
                 <iframe
                   src={mapSrc}
-                  style={{ width: "40vw", height: "48vh", borderRadius: "1vw", border: "0.25vw solid #1c618c" }}
+                  className="home-search-map"
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   title="Search Map"
                 />
-              </div>
+              </section>
             </div>
-          </div>
-        )}
-
-        {/* Menu Dropdown */}
-        {menuOpen && (
-          <div
-            style={{
-              display: "block", color: "#1c618c", fontWeight: 700,
-              fontFamily: '"Roboto Mono", monospace', fontSize: "2vw",
-              backgroundColor: "#fffbf4", width: "20.5vw",
-              borderRadius: "0 0 2vw 2vw", border: "0.25vw solid #1c618c",
-              boxSizing: "border-box", marginLeft: "-0.25vw", padding: "2vw",
-            }}
-          >
-            {[
-              { label: "Top Lowest", action: () => {} },
-              { label: "Most Visited", action: () => openSearch("topVisits") },
-              { label: "Favorites", action: () => openSearch("favorites") },
-              { label: "Nearest", action: () => openSearch("nearest") },
-              { label: "Locations", action: () => openSearch("results") },
-            ].map((item) => (
-              <p
-                key={item.label}
-                onClick={item.action}
-                className="cursor-pointer hover:opacity-70 transition-opacity mb-2"
-              >
-                {item.label}
-              </p>
-            ))}
           </div>
         )}
 
         {/* Settings Dropdown */}
         {settingsOpen && (
-          <div
-            style={{
-              display: "block", color: "#1c618c", fontWeight: 700,
-              fontFamily: '"Roboto Mono", monospace', fontSize: "2vw",
-              backgroundColor: "#fffbf4", width: "20.5vw",
-              borderRadius: "0 0 2vw 2vw", border: "0.25vw solid #1c618c",
-              boxSizing: "border-box", padding: "2vw",
-              position: "absolute", right: "2.5vw",
-            }}
-          >
-            {isLoggedIn ? (
-              <>
-                <a href="/profile" className="block no-underline text-[#1c618c] mb-2">Profile</a>
-                <a href="/settings" className="block no-underline text-[#1c618c]">Settings</a>
-              </>
-            ) : (
-              <a href="/login" className="block no-underline text-[#1c618c]">Log In</a>
-            )}
-          </div>
-        )}
+  <div
+    style={{
+      display: "block",
+      color: "#1c618c",
+      fontWeight: 700,
+      fontFamily: '"Roboto Mono", monospace',
+      fontSize: "2vw",
+      backgroundColor: "#fffbf4",
+      width: "20.5vw",
+      borderRadius: "0 0 2vw 2vw",
+      border: "0.25vw solid #1c618c",
+      padding: "2vw",
+      position: "absolute",
+      right: "2.5vw",
+    }}
+  >
+    {isLoggedIn ? (
+      <>
+        <p
+          style={{cursor:"pointer"}}
+onClick={() => {
+  setSettingsOpen(false);
+  navigate("/profile");
+}}        >
+{user?.userName}
+        </p>
+
+       {user?.userPermissionLevel > 0 && (
+  <p
+    style={{cursor:"pointer"}}
+    onClick={() => {
+      setSettingsOpen(false);
+      navigate("/admin");
+    }}
+  >
+    Switch as Admin
+  </p>
+)}
+
+        <p
+          style={{cursor:"pointer"}}
+          onClick={()=>{
+    setSettingsOpen(false);
+    logoutSession();
+    navigate("/login");
+}}
+        >
+          Log Out
+        </p>
+      </>
+    ) : (
+      <p
+        style={{cursor:"pointer"}}
+        onClick={() => navigate("/login")}
+      >
+        Log In
+      </p>
+    )}
+  </div>
+)}
       </div>
 
       {/* ====== HERO HEADER ====== */}

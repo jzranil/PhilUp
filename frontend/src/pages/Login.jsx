@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import logo from "../assets/Phil UP 2.png";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const LOGO_SRC = logo;
 
@@ -386,6 +388,54 @@ export default function PhilUpApp() {
   const [regPass2, setRegPass2] = useState("");
   const [focusedReg, setFocusedReg] = useState(null);
 
+  const navigate = useNavigate();
+const API_URL = "http://localhost:9000/api";
+
+const handleLogin = async () => {
+  try {
+    const res = await axios.post(`${API_URL}/login`, {
+      userName: username,
+      userPassword: password,
+    });
+
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+
+    if (res.data.user.userPermissionLevel > 0) {
+      navigate("/admin");
+    } else {
+      navigate("/");
+    }
+  } catch (error) {
+    alert(error.response?.data?.message || "Login failed.");
+  }
+};
+
+const handleSignup = async () => {
+  if (regPass !== regPass2) {
+    alert("Passwords do not match.");
+    return;
+  }
+
+  try {
+    await axios.post(`${API_URL}/users`, {
+      userFName: firstName,
+      userLName: lastName,
+      userBirthDate: birthday,
+      userAddress: address,
+      userEmail: email,
+      userContact: contact,
+      userName: email,
+      userPassword: regPass,
+    });
+
+    alert("Account created successfully!");
+    goToLogin();
+  } catch (error) {
+    alert(error.response?.data?.message || "Signup failed.");
+  }
+};
+
   const SLIDE_MS = 700;
 
   /* Navigate login → signup with wave sweep */
@@ -592,22 +642,23 @@ export default function PhilUpApp() {
           </button>
 
           <button
-            style={{
-              width: "220px",
-              padding: "13px 0",
-              borderRadius: "50px",
-              border: "none",
-              background: "#2e6d9e",
-              color: "#fff",
-              fontSize: "1rem",
-              fontWeight: "700",
-              cursor: "pointer",
-              marginBottom: "18px",
-              boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
-            }}
-          >
-            Log In
-          </button>
+  onClick={handleLogin}
+  style={{
+    width: "220px",
+    padding: "13px 0",
+    borderRadius: "50px",
+    border: "none",
+    background: "#2e6d9e",
+    color: "#fff",
+    fontSize: "1rem",
+    fontWeight: "700",
+    cursor: "pointer",
+    marginBottom: "18px",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+  }}
+>
+  Log In
+</button>
 
           <p style={{ color: "#c8e2f0", fontSize: "0.85rem", margin: 0 }}>
             Not a member yet?{" "}
@@ -960,21 +1011,22 @@ export default function PhilUpApp() {
               }}
             >
               <button
-                style={{
-                  width: "260px",
-                  padding: "14px 0",
-                  borderRadius: "50px",
-                  border: "none",
-                  background: "#2e6d9e",
-                  color: "#fff",
-                  fontSize: "1rem",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                  boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
-                }}
-              >
-                Sign Up
-              </button>
+  onClick={handleSignup}
+  style={{
+    width: "260px",
+    padding: "14px 0",
+    borderRadius: "50px",
+    border: "none",
+    background: "#2e6d9e",
+    color: "#fff",
+    fontSize: "1rem",
+    fontWeight: "700",
+    cursor: "pointer",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+  }}
+>
+  Sign Up
+</button>
               <p style={{ color: "#c8e2f0", fontSize: "0.85rem", margin: 0 }}>
                 Already have an account?{" "}
                 <span

@@ -1,5 +1,10 @@
-import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
+import {
+  Link,
+  NavLink,
+  useNavigate
+} from "react-router-dom";
+
 import {
   Bell,
   ChevronDown,
@@ -8,6 +13,11 @@ import {
   Menu,
   User,
 } from "lucide-react";
+
+import {
+  getSessionUser,
+  logoutSession
+} from "../../utils/session";
 
 import PhilUpLogo from "../../assets/Phil UP 2.png";
 import SearchIcon from "../../assets/search.png";
@@ -73,11 +83,22 @@ const Waves = () => (
 );
 
 export default function AdminLayout({
+  
   children,
   searchQuery = "",
   onSearchChange,
 }) {
   const [tablesOpen, setTablesOpen] = useState(true);
+
+  const navigate = useNavigate();
+
+useEffect(() => {
+  const user = getSessionUser();
+
+  if (!user || user.userPermissionLevel <= 0) {
+    navigate("/");
+  }
+}, [navigate]);
 
   return (
     <div
@@ -330,20 +351,24 @@ export default function AdminLayout({
             </NavLink>
           ))}
 
-          <Link
-            to="/login"
-            className="sb-item"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.45vw",
-              fontWeight: 700,
-              marginTop: "0.5vw",
-            }}
-          >
-            <span>Log Out</span>
-            <LogOut size="0.95vw" />
-          </Link>
+          <div
+  onClick={() => {
+    logoutSession();
+    navigate("/login");
+  }}
+  className="sb-item"
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.45vw",
+    fontWeight: 700,
+    marginTop: "0.5vw",
+    cursor: "pointer"
+  }}
+>
+  <span>Log Out</span>
+  <LogOut size="0.95vw" />
+</div>
         </aside>
 
         <main style={{ flex: 1, padding: "0.5vw 1.5vw 6vw 1vw" }}>

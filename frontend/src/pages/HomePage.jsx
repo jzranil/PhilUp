@@ -9,8 +9,8 @@ import wave1 from "../assets/bottom wave 1.png";
 import wave2 from "../assets/bottom wave 2.png";
 import wave3 from "../assets/bottom wave 3.png";
 import wave4 from "../assets/bottom wave 4.png";
-import petronLogo from "../assets/PetronLogo.png";
-import shellLogo from "../assets/ShellLogo.png";
+import petronLogo from "../assets/brand-images/PetronLogo.png";
+import shellLogo from "../assets/brand-images/ShellLogo.png";
 import image1 from "../assets/image1.png";
 import image1NoBg from "../assets/image1nobg.png";
 

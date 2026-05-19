@@ -4,7 +4,7 @@ const userInfosSchema = new mongoose.Schema({
     userPermissionLevel:{
         type: Number,
         required: false,
-        default: 0 // Good practice to set default here rather than just the controller
+        default: 1 // Good practice to set default here rather than just the controller
     },
     userFName: { 
         type: String, 

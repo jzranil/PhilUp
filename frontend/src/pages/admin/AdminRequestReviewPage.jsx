@@ -1,12 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import axios from "axios"; // Added missing import
 import AdminLayout from "./AdminLayout";
 
-import PetronLogo from "../../assets/PetronLogo.png";
-import ShellLogo from "../../assets/ShellLogo.png";
-import CleanFuelLogo from "../../assets/CleanFuelLogo.png";
-import TotalLogo from "../../assets/TotalLogo.png";
-import SeaoilLogo from "../../assets/SeaoilLogo.png";
-import MetroOilLogo from "../../assets/MetroOilLogo.png";
+import PetronLogo from "../../assets/brand-images/PetronLogo.png";
+import ShellLogo from "../../assets/brand-images/ShellLogo.png";
+import CleanFuelLogo from "../../assets/brand-images/CleanFuelLogo.png";
+import TotalLogo from "../../assets/brand-images/TotalLogo.png";
+import SeaoilLogo from "../../assets/brand-images/SeaoilLogo.png";
+import MetroOilLogo from "../../assets/brand-images/MetroOilLogo.png";
 
 const logoMap = {
   Petron: PetronLogo,
@@ -17,78 +18,10 @@ const logoMap = {
   MetroOil: MetroOilLogo,
 };
 
-const requestData = {
-  price: {
-    title: "Price Change Requests",
-    description: "Review submitted fuel price updates before they go live.",
-    columns: ["Request ID", "Station", "Fuel Type", "New Price", "Submitted By", "Status", "Action"],
-    rows: [
-      {
-        id: "PR-501",
-        brand: "Petron",
-        station: "Petron Sampaloc",
-        address: "Legarda St, Sampaloc, Manila",
-        fuelType: "Gasoline",
-        price: "PHP 62.15",
-        submittedBy: "Juan Dela Cruz",
-        status: "Pending",
-      },
-      {
-        id: "PR-502",
-        brand: "Shell",
-        station: "Shell Sta. Cruz",
-        address: "Felix Huertas Road, Sta. Cruz, Manila",
-        fuelType: "Diesel",
-        price: "PHP 56.80",
-        submittedBy: "Maria Santos",
-        status: "Pending",
-      },
-      {
-        id: "PR-503",
-        brand: "Seaoil",
-        station: "Seaoil Quezon City",
-        address: "Gregorio Araneta Ave, Quezon City",
-        fuelType: "Kerosene",
-        price: "PHP 64.20",
-        submittedBy: "Carlo Reyes",
-        status: "Pending",
-      },
-    ],
-  },
-  location: {
-    title: "Station Location Requests",
-    description: "Review submitted gas station locations before adding them to the map.",
-    columns: ["Request ID", "Station", "Address", "Coordinates", "Submitted By", "Status", "Action"],
-    rows: [
-      {
-        id: "LR-201",
-        brand: "Total",
-        station: "Total San Lazaro",
-        address: "San Lazaro Street, Sta. Cruz, Manila",
-        coordinates: "14.6177, 120.9827",
-        submittedBy: "Ana Lopez",
-        status: "Pending",
-      },
-      {
-        id: "LR-202",
-        brand: "Clean Fuel",
-        station: "Clean Fuel Manila",
-        address: "Rizal Avenue, Manila",
-        coordinates: "14.6042, 120.9822",
-        submittedBy: "Mark Rivera",
-        status: "Pending",
-      },
-      {
-        id: "LR-203",
-        brand: "MetroOil",
-        station: "MetroOil Quezon City",
-        address: "Maria Clara St, Quezon City",
-        coordinates: "14.6252, 121.0018",
-        submittedBy: "Liza Cruz",
-        status: "Pending",
-      },
-    ],
-  },
+const getLogoUrl = (brandName) => {
+  // Removes spaces to turn "Clean Fuel" into "CleanFuelLogo.png"
+  const fileName = brandName.replace(/\s+/g, ""); 
+  return `/src/assets/brand-images/${fileName}Logo.png`;
 };
 
 const cardStyle = {
@@ -111,25 +44,27 @@ const actionButtonStyle = (variant) => ({
   padding: "0.35vw 0.55vw",
 });
 
+const cellStyle = {
+  borderBottom: "0.08vw solid rgba(28, 97, 140, 0.25)",
+  padding: "0.75vw 0.45vw",
+  lineHeight: 1.35,
+  verticalAlign: "top",
+};
+
 function StationCell({ brand, station, address }) {
-  const logo = logoMap[brand];
+  try{
 
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.55vw" }}>
-      {logo && (
-        <img
-          src={logo}
-          alt={`${brand} logo`}
-          style={{
-            width: "2vw",
-            height: "2vw",
-            objectFit: "contain",
-            borderRadius: "50%",
-            flexShrink: 0,
-          }}
-        />
-      )}
-      <div>
+    <div className="flex items-start ">
+      <div className="flex flex-wrap items-center justify-center gap-2" style={{ minWidth: 0 }}>
+          {
+        station && (
+          <img
+            src={getLogoUrl(station)}
+            alt={`${station} logo`}
+            className="h-8 contain rounded-full flex-shrink-0"
+          />
+        )}
         <div style={{ color: "#1c618c", fontWeight: 700 }}>{station}</div>
         {address && (
           <div style={{ color: "#3178ad", fontSize: "0.72vw", marginTop: "0.2vw" }}>
@@ -139,12 +74,110 @@ function StationCell({ brand, station, address }) {
       </div>
     </div>
   );
+  } catch (error) {
+        console.error("Failed to load station cell requests", error);
+      }
 }
 
 export default function AdminRequestReviewPage({ type }) {
-  const page = requestData[type] ?? requestData.price;
+  const [locationRequest, setLocationRequest] = useState([]);
+  const [priceRequest, setPriceRequest] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [fuelTypes, setFuelTypes] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [rows, setRows] = useState(page.rows);
+  const [rows, setRows] = useState([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const responseLocations = await axios.get("http://localhost:9000/api/station-locations/");
+        setLocationRequest(responseLocations.data);
+        const responseBrands = await axios.get("http://localhost:9000/api/brands/");
+        setBrands(responseBrands.data);
+        const responseUsers = await axios.get("http://localhost:9000/api/users/");
+        setUsers(responseUsers.data);
+        const responsePriceRequests = await axios.get("http://localhost:9000/api/fuel-prices/");
+        setPriceRequest(responsePriceRequests.data);
+        const responseFuelTypes = await axios.get("http://localhost:9000/api/fuel-types/");
+        setFuelTypes(responseFuelTypes.data);
+        console.log("Fetched fuel types:", responseFuelTypes.data);
+        console.log("Fetched location requests:", responseLocations.data);
+        console.log("Fetched brands:", responseBrands.data);
+        console.log("Fetched users:", responseUsers.data);
+        console.log("Fetched price requests:", responsePriceRequests.data);
+      } catch (error) {
+        console.error("Failed to fetch location requests", error);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  // 2. requestData is calculated dynamically based on state
+  const requestData = useMemo(() => ({
+    price: {
+      title: "Price Change Requests",
+      description: "Review submitted fuel price updates before they go live.",
+      columns: ["Request ID", "Station", "Fuel Type", "New Price", "Submitted By", "Status", "Action"],
+      rows: [
+        {
+          id: "PR-501",
+          brand: "Petron",
+          station: "Petron Sampaloc",
+          address: "Legarda St, Sampaloc, Manila",
+          fuelType: "Gasoline",
+          price: "PHP 62.15",
+          submittedBy: "Juan Dela Cruz",
+          status: "Pending",
+        },priceRequest
+        .map((request) => {
+          const brand = brands.find((b) => b._id === request.brandID);
+          const user = users.find((u) => u._id === request.uploadedBy);
+          const fuelType = fuelTypes.find((ft) => ft._id === request.fuelTypeID);
+          return {
+            id: request._id,
+            brand: brand ? `../../..${brand.brandImage}` : request.brandID,
+            station: brand ? brand.brandDesc : request.brandID,
+            address: request.stationAddress,
+            fuelType: fuelType ? fuelType.fuelTypeDesc : request.fuelTypeID,
+            price: `PHP ${request.newPrice.toFixed(2)}`,
+            uploadedBy: user ? user.userName : request.uploadedBy,
+            status: request.forEval === 0 ? "Pending" : "Approved",
+            }
+        })
+        ,
+      ],
+    },
+    location: {
+      title: "Station Location Requests",
+      description: "Review submitted gas station locations before adding them to the map.",
+      columns: ["Request ID", "Station", "Address", "Coordinates", "Submitted By", "Status", "Action"],
+      rows: locationRequest
+        .map((request) => {
+          const brand = brands.find((b) => b._id === request.brandID);
+          const user = users.find((u) => u._id === request.uploadedBy);
+          return {
+            id: request._id,
+            brand: brand ? `../../..${brand.brandImage}` : request.brandID,
+            station: brand ? brand.brandDesc : request.brandID,
+            address: request.stationAddress,
+            coordinates: `${request.stationLat}, ${request.stationLong}`,
+            uploadedBy: user ? user.userName : request.uploadedBy,
+            status: request.forEval === 0 ? "Approved" : "Pending",
+          };
+        }).filter((request) => request.status === "Pending")
+        ,
+    },
+  }), [locationRequest, brands, users]);
+
+  console.log("Current requestData:", requestData);
+  const page = requestData[type] ?? requestData.price;
+
+  // 3. Sync local 'rows' state when data finishes fetching or type changes
+  useEffect(() => {
+    setRows(page.rows);
+  }, [locationRequest, brands, type, page.rows]);
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -252,7 +285,7 @@ export default function AdminRequestReviewPage({ type }) {
                       <td style={cellStyle}>{row.coordinates}</td>
                     </>
                   )}
-                  <td style={cellStyle}>{row.submittedBy}</td>
+                  <td style={cellStyle}>{row.uploadedBy}</td>
                   <td style={cellStyle}>
                     <span
                       style={{
@@ -309,10 +342,3 @@ export default function AdminRequestReviewPage({ type }) {
     </AdminLayout>
   );
 }
-
-const cellStyle = {
-  borderBottom: "0.08vw solid rgba(28, 97, 140, 0.25)",
-  padding: "0.75vw 0.45vw",
-  lineHeight: 1.35,
-  verticalAlign: "top",
-};

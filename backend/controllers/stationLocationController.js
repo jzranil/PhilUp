@@ -2,12 +2,7 @@ import StationLocation from "../models/stationLocationModel.js";
 
 export const createStationLocation = async (req, res) => {
   try {
-    const { stationLocID, brandID, stationLong, stationLat } = req.body;    
-    
-    const idExist = await StationLocation.findOne({ stationLocID });
-    if (idExist) {
-      return res.status(400).json({ message: "A station with this Station Location ID already exists." });
-    }    
+    const { brandID, stationLong, stationLat } = req.body;    
     
     const stationExist = await StationLocation.findOne({ 
       brandID, 

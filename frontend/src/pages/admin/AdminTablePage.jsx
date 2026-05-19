@@ -1,78 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import axios from "axios";
 import AdminLayout from "./AdminLayout";
-
-const tableData = {
-  "registered-users": {
-    title: "Registered Users",
-    description: "Manage user accounts registered in Phil UP.",
-    columns: ["User ID", "Name", "Email", "Contact", "Date Created"],
-    rows: [
-      ["U-1001", "Juan Dela Cruz", "juan@example.com", "0917 123 4567", "May 13, 2025"],
-      ["U-1002", "Maria Santos", "maria@example.com", "0918 222 4433", "May 14, 2025"],
-      ["U-1003", "Carlo Reyes", "carlo@example.com", "0999 312 1200", "May 15, 2025"],
-    ],
-  },
-  admins: {
-    title: "Admins",
-    description: "Manage administrator accounts and access.",
-    columns: ["Admin ID", "Name", "Role", "Email", "Status"],
-    rows: [
-      ["A-001", "System Admin", "Super Admin", "admin@philup.com", "Active"],
-      ["A-002", "Price Reviewer", "Moderator", "prices@philup.com", "Active"],
-      ["A-003", "Location Reviewer", "Moderator", "locations@philup.com", "Active"],
-    ],
-  },
-  "registered-locations": {
-    title: "Registered Locations",
-    description: "View accepted gas station locations.",
-    columns: ["Location ID", "Brand", "Address", "Uploaded By", "Status"],
-    rows: [
-      ["L-201", "Petron", "Sampaloc, Manila", "U-1001", "Accepted"],
-      ["L-202", "Shell", "Sta. Cruz, Manila", "U-1002", "Accepted"],
-      ["L-203", "Seaoil", "Quezon City", "U-1003", "Accepted"],
-    ],
-  },
-  "gas-prices": {
-    title: "Gas Prices",
-    description: "Review current accepted fuel price records.",
-    columns: ["Price ID", "Station", "Fuel Type", "Price", "Date Updated"],
-    rows: [
-      ["P-501", "Petron Sampaloc", "Gasoline", "PHP 62.15", "May 13, 2025"],
-      ["P-502", "Shell Sta. Cruz", "Diesel", "PHP 56.80", "May 13, 2025"],
-      ["P-503", "Seaoil Quezon City", "Kerosene", "PHP 64.20", "May 14, 2025"],
-    ],
-  },
-  approvals: {
-    title: "Approvals",
-    description: "Review pending location and price submissions.",
-    columns: ["Request ID", "Type", "Submitted By", "Submitted On", "Status"],
-    rows: [
-      ["R-701", "Gas Price", "U-1001", "May 13, 2025", "Pending"],
-      ["R-702", "Location", "U-1002", "May 14, 2025", "Pending"],
-      ["R-703", "Gas Price", "U-1003", "May 15, 2025", "Pending"],
-    ],
-  },
-  "admin-log": {
-    title: "Admin Log",
-    description: "Track admin actions across the system.",
-    columns: ["Log ID", "Admin", "Action", "Date", "Time"],
-    rows: [
-      ["AL-001", "System Admin", "Approved location L-201", "May 13, 2025", "01:46:25"],
-      ["AL-002", "Price Reviewer", "Approved price P-501", "May 13, 2025", "02:17:14"],
-      ["AL-003", "Location Reviewer", "Rejected location R-702", "May 15, 2025", "04:12:43"],
-    ],
-  },
-  "user-log": {
-    title: "User Log",
-    description: "Track user submissions and account activity.",
-    columns: ["Log ID", "User", "Action", "Date", "Time"],
-    rows: [
-      ["UL-001", "Juan Dela Cruz", "Submitted gas price", "May 13, 2025", "01:46:25"],
-      ["UL-002", "Maria Santos", "Submitted location", "May 14, 2025", "02:17:14"],
-      ["UL-003", "Carlo Reyes", "Updated profile", "May 15, 2025", "04:12:43"],
-    ],
-  },
-};
 
 const cardStyle = {
   border: "0.2vw solid #1c618c",
@@ -83,9 +11,128 @@ const cardStyle = {
 };
 
 export default function AdminTablePage({ tableKey }) {
+  try {
+    const [user, setUser] = useState([]);
+    
+useEffect(() => {
+  async function fetchData() {
+      try {
+        const responseUser = await axios.get("http://localhost:9000/api/users/");
+        setUser(responseUser.data);
+        console.log("Fetched user data:", responseUser.data);
+      } catch (error) {
+        console.error("Failed to fetch user data", error);
+      }
+    }
+       fetchData();
+  }, []);
+  
+const tableData = {
+  "registered-users": {
+    title: "Registered Users",
+    description: "Manage user accounts registered in Phil UP.",
+    columns: ["User ID", "Name", "UserName","Email", "Contact", "Date Created"],
+    rows: user
+        .map((users) => {
+          return {
+            id: users._id,
+            name: `${users.userFName} ${users.userLName}`,
+            username: users.userName,
+            email: users.userEmail,
+            contact: users.userContact,
+            role: users.userPermissionLevel >= 100 ? "Super Admin" : users.userPermissionLevel >= 1 ? "Admin" : "User",
+          };
+        }).filter((user) => user.role === "User")
+  ,
+  },
+  admins: {
+    title: "Admins",
+    description: "Manage administrator accounts and access.",
+    columns: ["Admin ID", "Name","Username", "Email","Contact Number", "Role"],
+    rows: user
+        .map((users) => {
+          return {
+            id: users._id,
+            name: `${users.userFName} ${users.userLName}`,
+            username: users.userName,
+            email: users.userEmail,
+            contact: users.userContact,
+            role: users.userPermissionLevel >= 100 ? "Super Admin" : users.userPermissionLevel >= 1 ? "Admin" : "User",
+          };
+        }).filter((user) => user.role === "Super Admin" || user.role === "Admin")
+  ,},
+  "registered-locations": {
+    title: "Registered Locations",
+    description: "View accepted gas station locations.",
+    columns: ["Location ID", "Station", "Address", "Coordinates", "Uploaded By", "Status"],
+    rows: [{
+        id: "L-201",
+        station: "Petron",
+        address: "Sampaloc, Manila",
+        coordinates: "14.5995° N, 120.9842° E",
+        uploadedBy: "U-1001",
+        status: "Accepted",
+    },
+    ],
+  },
+  "gas-prices": {
+    title: "Gas Prices",
+    description: "Review current accepted fuel price records.",
+    columns: ["Price ID", "Station","Address", "Fuel Type", "Price", "Date Updated"],
+    rows: [{
+      id: "P-501",
+      station: "Petron Sampaloc",
+      address: "Sampaloc, Manila",
+      fuelType: "Gasoline",
+      price: "PHP 62.15",
+      dateUpdated: "May 13, 2025",
+    },
+    ],
+  },
+  // approvals: {
+  //   title: "Approvals",
+  //   description: "Review pending location and price submissions.",
+  //   columns: ["Request ID", "Type", "Submitted By", "Submitted On", "Status"],
+  //   rows: [
+  //     ["R-701", "Gas Price", "U-1001", "May 13, 2025", "Pending"],
+  //     ["R-702", "Location", "U-1002", "May 14, 2025", "Pending"],
+  //     ["R-703", "Gas Price", "U-1003", "May 15, 2025", "Pending"],
+  //   ],
+  // },
+  "admin-log": {
+    title: "Admin Log",
+    description: "Track admin actions across the system.",
+    columns: ["Log ID", "Role","Level", "Action","Trace ID", "Timestamp"],
+    rows: [
+      {
+        id: "AL-001",
+        role: "Admin",
+        level: "INFO",
+        action: "Updated gas price",
+        traceId: "HIibiUu87nuYu8g8gbgt6uU6wyy8u",
+        timestamp: "May 13, 2025 01:46:25"
+      }
+    ],
+  },
+  "user-log": {
+    title: "User Log",
+    description: "Track user submissions and account activity.",
+    columns: ["Log ID", "User","Level", "Action","Trace ID", "Timestamp"],
+    rows: [{
+        id: "UL-001",
+        user: "U-1001",
+        level: "INFO",
+        action: "Submitted gas price update",
+        traceId: "HIibiUu87nuYu8g8gbgt6uU6wyy8u",
+        timestamp: "May 13, 2025 01:50:10"
+    }
+    ],
+  },
+};
+  console.log("Table data for admins:", tableData.admins);
+  
   const [searchQuery, setSearchQuery] = useState("");
   const page = tableData[tableKey] ?? tableData["registered-users"];
-
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return page.rows;
@@ -164,22 +211,27 @@ export default function AdminTablePage({ tableKey }) {
               </tr>
             </thead>
             <tbody>
-              {filteredRows.map((row) => (
-                <tr key={row.join("-")}>
-                  {row.map((cell, index) => (
-                    <td
-                      key={`${cell}-${index}`}
-                      style={{
-                        borderBottom: "0.08vw solid rgba(28, 97, 140, 0.25)",
-                        padding: "0.75vw 0.45vw",
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
+              {filteredRows.map((row, rowIndex) => {
+                // Extract the values from the row object into an array
+                const rowValues = Object.values(row);
+
+                return (
+                  <tr key={row.id || rowValues.join("-")}>
+                    {rowValues.map((cell, index) => (
+                      <td
+                        key={`${cell}-${index}`}
+                        style={{
+                          borderBottom: "0.08vw solid rgba(28, 97, 140, 0.25)",
+                          padding: "0.75vw 0.45vw",
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
               {filteredRows.length === 0 && (
                 <tr>
                   <td
@@ -200,4 +252,7 @@ export default function AdminTablePage({ tableKey }) {
       </section>
     </AdminLayout>
   );
+  } catch (error) {
+          return console.error("Failed to fetch user data", error);
+      }
 }

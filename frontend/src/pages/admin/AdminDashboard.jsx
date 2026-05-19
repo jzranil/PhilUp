@@ -21,14 +21,14 @@ import {
 /* ── Asset Imports ── */
 import PhilUpLogo from "../../assets/Phil UP 2.png";
 import SearchIcon from "../../assets/search.png";
-import PetronLogo from "../../assets/PetronLogo.png";
-import ShellLogo from "../../assets/ShellLogo.png";
-import CleanFuelLogo from "../../assets/CleanFuelLogo.png";
-import TotalLogo from "../../assets/TotalLogo.png";
-import UnoFuelLogo from "../../assets/UnoFuelLogo.png";
-import SeaoilLogo from "../../assets/SeaoilLogo.png";
-import MetroOilLogo from "../../assets/MetroOilLogo.png";
-import GlobalOilLogo from "../../assets/GlobalOilLogo.png";
+import PetronLogo from "../../assets/brand-images/PetronLogo.png";
+import ShellLogo from "../../assets/brand-images/ShellLogo.png";
+import CleanFuelLogo from "../../assets/brand-images/CleanFuelLogo.png";
+import TotalLogo from "../../assets/brand-images/TotalLogo.png";
+import UnoFuelLogo from "../../assets/brand-images/UnoFuelLogo.png";
+import SeaoilLogo from "../../assets/brand-images/SeaoilLogo.png";
+import MetroOilLogo from "../../assets/brand-images/MetroOilLogo.png";
+import GlobalOilLogo from "../../assets/brand-images/GlobalOilLogo.png";
 
 /* ── Data ── */
 const chartData = [

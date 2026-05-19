@@ -392,6 +392,12 @@ export default function PhilUpApp() {
 const API_URL = "http://localhost:9000/api";
 
 const handleLogin = async () => {
+
+  if (!username || !password) {
+  alert("Please enter username and password");
+  return;
+}
+
   try {
     const res = await axios.post(`${API_URL}/login`, {
       userName: username,
@@ -430,6 +436,19 @@ const handleSignup = async () => {
     });
 
     alert("Account created successfully!");
+
+    setUsername(email);
+setPassword(regPass);
+
+    setFirstName("");
+setLastName("");
+setBirthday("");
+setAddress("");
+setEmail("");
+setContact("");
+setRegPass("");
+setRegPass2("");
+
     goToLogin();
   } catch (error) {
     alert(error.response?.data?.message || "Signup failed.");

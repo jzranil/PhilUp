@@ -161,15 +161,57 @@ function Navbar({ navigate, menuOpen, setMenuOpen, settingsOpen, setSettingsOpen
           <button onClick={() => navigate("/locations")} style={NAV_BTN}><FaSearch /></button>
           <span style={{ color: "#1c618c55", fontFamily: '"Roboto Mono", monospace', fontSize: "1vw" }}>Search stations...</span>
         </div>
-        <a href="/" style={{ position: "absolute", left: "50%", transform: "translateX(-50%) translateY(1vw)", zIndex: 10 }}>
-          <img src={philUpLogo} alt="Phil Up" style={{ width: "10vw", height: "10vw" }} />
-        </a>
-        <div style={{ display: "flex", alignItems: "center", gap: "1vw", width: "25vw", justifyContent: "flex-end" }}>
-          <button style={NAV_BTN}><FaBell /></button>
-          <button onClick={() => { setSettingsOpen(v => !v); setMenuOpen(false); }} style={NAV_BTN}>
-            <FaUserCircle style={{ fontSize: "2.3vw" }} />
-          </button>
-        </div>
+       {/* Center Logo */}
+<div
+  onClick={() => {
+    navigate("/");
+  }}
+  style={{
+    position: "absolute",
+    left: "50%",
+    transform: "translateX(-50%) translateY(1vw)",
+    zIndex: 10,
+    cursor: "pointer",
+  }}
+>
+  <img
+    src={philUpLogo}
+    alt="Phil Up"
+    style={{
+      width: "10vw",
+      height: "10vw",
+    }}
+  />
+</div>
+
+{/* Right */}
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "1vw",
+    width: "25vw",
+    justifyContent: "flex-end",
+  }}
+>
+  <button style={NAV_BTN}>
+    <FaBell />
+  </button>
+
+  <button
+    onClick={() => {
+      setSettingsOpen(v => !v);
+      setMenuOpen(false);
+    }}
+    style={NAV_BTN}
+  >
+    <FaUserCircle
+      style={{
+        fontSize: "2.3vw",
+      }}
+    />
+  </button>
+</div>
       </div>
       {/* Dividers */}
       <div style={{ display: "flex", flexDirection: "column", padding: "0 2.5vw" }}>
@@ -186,29 +228,38 @@ function Navbar({ navigate, menuOpen, setMenuOpen, settingsOpen, setSettingsOpen
 
 <p
 style={DROP_ITEM}
-onClick={()=>navigate("/locations")}
->
+onClick={()=>{
+setMenuOpen(false);
+navigate("/locations");
+}}>
 Top Lowest
 </p>
 
 <p
 style={DROP_ITEM}
-onClick={()=>navigate("/locations")}
->
+onClick={()=>{
+setMenuOpen(false);
+navigate("/locations");
+}}>
 Most Visited
 </p>
 
 <p
 style={DROP_ITEM}
-onClick={()=>navigate("/locations")}
+onClick={()=>{
+setMenuOpen(false);
+navigate("/locations");
+}}
 >
 Locations
 </p>
 
 <p
 style={DROP_ITEM}
-onClick={()=>navigate("/locations")}
->
+onClick={()=>{
+setMenuOpen(false);
+navigate("/locations");
+}}>
 Nearest
 </p>
 
@@ -216,7 +267,11 @@ Nearest
 <>
 <p
 style={DROP_ITEM}
-onClick={()=>navigate("/profile")}
+onClick={()=>{
+setMenuOpen(false);
+navigate("/profile");
+}}
+
 >
 {getSessionUser()?.userName}
 </p>
@@ -224,8 +279,10 @@ onClick={()=>navigate("/profile")}
 {getSessionUser()?.userPermissionLevel>0 && (
 <p
 style={DROP_ITEM}
-onClick={()=>navigate("/admin")}
->
+onClick={()=>{
+setMenuOpen(false);
+navigate("/admin");
+}}>
 Switch as Admin
 </p>
 )}
@@ -233,6 +290,7 @@ Switch as Admin
 <p
 style={DROP_ITEM}
 onClick={()=>{
+setMenuOpen(false);
 logoutSession();
 navigate("/login");
 }}
@@ -245,7 +303,10 @@ Log Out
 {!isLoggedIn && (
 <p
 style={DROP_ITEM}
-onClick={()=>navigate("/login")}
+onClick={()=>{
+setMenuOpen(false);
+navigate("/login");
+}}
 >
 Log In
 </p>
@@ -255,10 +316,54 @@ Log In
 )}
       {settingsOpen && (
         <div style={{ ...DROPDOWN, left: "auto", right: "2.5vw" }}>
-          {isLoggedIn
-            ? <><a href="/profile" style={DROP_LINK}>Profile</a><a href="/settings" style={DROP_LINK}>Settings</a></>
-            : <a href="/login" style={DROP_LINK}>Log In</a>
-          }
+          {isLoggedIn ? (
+<>
+<p
+style={DROP_LINK}
+onClick={()=>{
+setSettingsOpen(false);
+navigate("/profile");
+}}
+>
+Profile
+</p>
+
+{getSessionUser()?.userPermissionLevel > 0 && (
+<p
+style={DROP_LINK}
+onClick={()=>{
+setSettingsOpen(false);
+navigate("/admin");
+}}
+>
+Switch as Admin
+</p>
+)}
+
+<p
+style={DROP_LINK}
+onClick={()=>{
+setSettingsOpen(false);
+logoutSession();
+navigate("/login");
+}}
+>
+Log Out
+</p>
+</>
+) : (
+
+<p
+style={DROP_LINK}
+onClick={()=>{
+setSettingsOpen(false);
+navigate("/login");
+}}
+>
+Log In
+</p>
+
+)}
         </div>
       )}
     </div>

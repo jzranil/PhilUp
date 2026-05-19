@@ -10,6 +10,12 @@ import {
   Maximize2,
 } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  getSessionUser,
+  logoutSession
+} from "../../utils/session";
 
 /* ── Asset Imports ── */
 /* ── Asset Imports ── */
@@ -310,6 +316,16 @@ export default function AdminDashboard() {
   const [tablesOpen, setTablesOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const navigate = useNavigate();
+
+useEffect(() => {
+  const user = getSessionUser();
+
+  if (!user || user.userPermissionLevel <= 0) {
+    navigate("/");
+  }
+}, [navigate]);
+
   return (
     <div
       style={{
@@ -568,20 +584,24 @@ export default function AdminDashboard() {
             </NavLink>
           ))}
 
-          <Link
-            to="/login"
-            className="sb-item"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.45vw",
-              fontWeight: 700,
-              marginTop: "0.5vw",
-            }}
-          >
-            <span>Log Out</span>
-            <LogOut size="0.95vw" />
-          </Link>
+          <div
+  onClick={() => {
+    logoutSession();
+    navigate("/login");
+  }}
+  className="sb-item"
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.45vw",
+    fontWeight: 700,
+    marginTop: "0.5vw",
+    cursor: "pointer"
+  }}
+>
+  <span>Log Out</span>
+  <LogOut size="0.95vw" />
+</div>
         </aside>
 
         {/* ── Main ── */}

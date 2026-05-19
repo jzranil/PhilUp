@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   FaBars,
@@ -12,8 +12,16 @@ import {
 
 import philUpLogo from "../assets/Phil UP 2.png";
 
+import { isLoggedIn } from "../utils/session";
+
 export default function UploadLocationPage() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+  if (!isLoggedIn()) {
+    navigate("/login");
+  }
+}, [navigate]);
 
   const [brand, setBrand] = useState("");
   const [address, setAddress] = useState("");

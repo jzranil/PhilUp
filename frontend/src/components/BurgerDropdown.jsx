@@ -1,12 +1,4 @@
-const DEFAULT_ITEMS = [
-  "Top Lowest",
-  "Most Visited",
-  "Locations",
-  "Nearest",
-  "username",
-  "Switch as Admin",
-  "Log Out",
-];
+const DEFAULT_ITEMS = [];
 
 export default function BurgerDropdown({ items = DEFAULT_ITEMS, actions = {} }) {
   return (

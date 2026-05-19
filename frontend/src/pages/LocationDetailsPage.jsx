@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaBars, FaBell, FaSearch, FaUserCircle } from "react-icons/fa";
 import philUpLogo from "../assets/Phil Up 2.png";
 import shellLogo from "../assets/ShellLogo.png";
+import { getSessionUser, logoutSession } from "../utils/session";
 
 // ─── Replace with real API call using `id` from useParams ───────────────────
 const MOCK_STATION = {
@@ -132,10 +133,28 @@ function Navbar({ navigate, menuOpen, setMenuOpen, settingsOpen, setSettingsOpen
           </span>
         </div>
 
-        {/* Centre logo */}
-        <a href="/" style={{ position: "absolute", left: "50%", transform: "translateX(-50%) translateY(1vw)", zIndex: 10 }}>
-          <img src={philUpLogo} alt="Phil Up" style={{ width: "10vw", height: "10vw" }} />
-        </a>
+       {/* Centre logo */}
+<div
+  onClick={() => {
+    navigate("/");
+  }}
+  style={{
+    position: "absolute",
+    left: "50%",
+    transform: "translateX(-50%) translateY(1vw)",
+    zIndex: 10,
+    cursor: "pointer",
+  }}
+>
+  <img
+    src={philUpLogo}
+    alt="Phil Up"
+    style={{
+      width: "10vw",
+      height: "10vw",
+    }}
+  />
+</div>
 
         {/* Right */}
         <div style={{ display: "flex", alignItems: "center", gap: "1vw", width: "25vw", justifyContent: "flex-end" }}>
@@ -161,26 +180,114 @@ function Navbar({ navigate, menuOpen, setMenuOpen, settingsOpen, setSettingsOpen
 
       {/* Menu dropdown */}
       {menuOpen && (
-        <div style={DROPDOWN}>
-          {["Top Lowest", "Most Visited", "Locations", "Nearest"].map(label => (
-            <p key={label} style={DROP_ITEM}
-              onClick={() => { navigate("/locations"); setMenuOpen(false); }}>
-              {label}
-            </p>
-          ))}
-        </div>
-      )}
+  <div style={DROPDOWN}>
+    {[
+      "Top Lowest",
+      "Most Visited",
+      "Locations",
+      "Nearest",
+
+      ...(isLoggedIn
+        ? [
+            getSessionUser()?.userName,
+
+            ...(getSessionUser()?.userPermissionLevel > 0
+              ? ["Switch as Admin"]
+              : []),
+
+            "Log Out"
+          ]
+        : ["Log In"])
+    ].map(label => (
+      <p
+        key={label}
+        style={DROP_ITEM}
+        onClick={() => {
+
+          if(label==="Log In"){
+   setMenuOpen(false);
+   navigate("/login");
+}
+
+          else if(label==="Log Out"){
+   setMenuOpen(false);
+   logoutSession();
+   navigate("/login");
+}
+
+          else if(label==="Switch as Admin"){
+   setMenuOpen(false);
+   navigate("/admin");
+}
+
+          else if(label===getSessionUser()?.userName){
+   setMenuOpen(false);
+   navigate("/profile");
+}
+
+         else{
+   setMenuOpen(false);
+   navigate("/locations");
+}
+
+        }}
+      >
+        {label}
+      </p>
+    ))}
+  </div>
+)}
 
       {/* Settings dropdown */}
       {settingsOpen && (
         <div style={{ ...DROPDOWN, left: "auto", right: "2.5vw" }}>
-          {isLoggedIn
-            ? <>
-                <a href="/profile" style={DROP_LINK}>Profile</a>
-                <a href="/settings" style={DROP_LINK}>Settings</a>
-              </>
-            : <a href="/login" style={DROP_LINK}>Log In</a>
-          }
+         {isLoggedIn ? (
+<>
+<p
+style={{cursor:"pointer"}}
+onClick={()=>{
+setSettingsOpen(false);
+navigate("/profile");
+}}
+>
+{getSessionUser()?.userName}
+</p>
+
+{getSessionUser()?.userPermissionLevel>0 && (
+<p
+style={{cursor:"pointer"}}
+onClick={()=>{
+setSettingsOpen(false);
+navigate("/admin");
+}}
+>
+Switch as Admin
+</p>
+)}
+
+<p
+style={{cursor:"pointer"}}
+onClick={()=>{
+setSettingsOpen(false);
+logoutSession();
+navigate("/login");
+}}
+>
+Log Out
+</p>
+
+</>
+) : (
+<p
+style={{cursor:"pointer"}}
+onClick={()=>{
+   setSettingsOpen(false);
+   navigate("/login");
+}}
+>
+Log In
+</p>
+)}
         </div>
       )}
     </div>
@@ -218,9 +325,11 @@ export default function LocationDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+const user = getSessionUser();
+const isLoggedIn = !!user;
+
   const station = MOCK_STATION; // replace with useEffect fetch
-  const [isLoggedIn]    = useState(false);
-  const [menuOpen,    setMenuOpen]    = useState(false);
+  const [menuOpen,    setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 

@@ -4,6 +4,13 @@ import { FaBars, FaBell, FaSearch, FaUserCircle } from "react-icons/fa";
 import philUpLogo from "../assets/Phil Up 2.png";
 import shellLogo from "../assets/ShellLogo.png";
 
+import {
+getSessionUser,
+isLoggedIn,
+logoutSession
+}
+from "../utils/session";
+
 // ─── Replace with real API call using `id` ────────────────────────────────────
 const MOCK_STATION = {
   brandLogo: shellLogo,
@@ -175,12 +182,77 @@ function Navbar({ navigate, menuOpen, setMenuOpen, settingsOpen, setSettingsOpen
         </div>
       </div>
       {menuOpen && (
-        <div style={DROPDOWN}>
-          {["Top Lowest", "Most Visited", "Locations", "Nearest"].map(label => (
-            <p key={label} style={DROP_ITEM} onClick={() => { navigate("/locations"); setMenuOpen(false); }}>{label}</p>
-          ))}
-        </div>
-      )}
+<div style={DROPDOWN}>
+
+<p
+style={DROP_ITEM}
+onClick={()=>navigate("/locations")}
+>
+Top Lowest
+</p>
+
+<p
+style={DROP_ITEM}
+onClick={()=>navigate("/locations")}
+>
+Most Visited
+</p>
+
+<p
+style={DROP_ITEM}
+onClick={()=>navigate("/locations")}
+>
+Locations
+</p>
+
+<p
+style={DROP_ITEM}
+onClick={()=>navigate("/locations")}
+>
+Nearest
+</p>
+
+{isLoggedIn && (
+<>
+<p
+style={DROP_ITEM}
+onClick={()=>navigate("/profile")}
+>
+{getSessionUser()?.userName}
+</p>
+
+{getSessionUser()?.userPermissionLevel>0 && (
+<p
+style={DROP_ITEM}
+onClick={()=>navigate("/admin")}
+>
+Switch as Admin
+</p>
+)}
+
+<p
+style={DROP_ITEM}
+onClick={()=>{
+logoutSession();
+navigate("/login");
+}}
+>
+Log Out
+</p>
+</>
+)}
+
+{!isLoggedIn && (
+<p
+style={DROP_ITEM}
+onClick={()=>navigate("/login")}
+>
+Log In
+</p>
+)}
+
+</div>
+)}
       {settingsOpen && (
         <div style={{ ...DROPDOWN, left: "auto", right: "2.5vw" }}>
           {isLoggedIn
@@ -204,8 +276,10 @@ export default function UploadPricePage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const user = getSessionUser();
+  const loggedIn = isLoggedIn();
+
   const station = MOCK_STATION;
-  const [isLoggedIn]     = useState(false);
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mounted,      setMounted]      = useState(false);
@@ -295,12 +369,14 @@ export default function UploadPricePage() {
 
       <WaveCanvas />
 
-      <Navbar
-        navigate={navigate}
-        menuOpen={menuOpen} setMenuOpen={setMenuOpen}
-        settingsOpen={settingsOpen} setSettingsOpen={setSettingsOpen}
-        isLoggedIn={isLoggedIn}
-      />
+ <Navbar
+  navigate={navigate}
+  menuOpen={menuOpen}
+  setMenuOpen={setMenuOpen}
+  settingsOpen={settingsOpen}
+  setSettingsOpen={setSettingsOpen}
+  isLoggedIn={loggedIn}
+/>
 
       <div
         className={`upp-wrap${mounted ? " in" : ""}`}

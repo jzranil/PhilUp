@@ -1,12 +1,21 @@
 import { useState, useEffect, useRef } from "react";
 import { FaBars, FaBell, FaSearch, FaUserCircle } from "react-icons/fa";
 import BurgerDropdown from "../components/BurgerDropdown";
+import { useNavigate } from "react-router-dom";
+
+import {
+ getSessionUser,
+ isLoggedIn,
+ logoutSession
+} from "../utils/session";
 
 import philUpLogo from "../assets/Phil UP 2.png";
 import petronLogo from "../assets/PetronLogo.png";
 import shellLogo  from "../assets/ShellLogo.png";
 import seaoilLogo from "../assets/SeaoilLogo.png";
 import unioilLogo from "../assets/UnoFuelLogo.png";
+
+
 
 // ─── Mock data — replace with real API ────────────────────────────────────────
 const MOCK_STATIONS = [
@@ -141,10 +150,12 @@ function WaveCanvas() {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function LocationsPage() {
+  const user = getSessionUser();
+  const loggedIn = isLoggedIn();
+
   const [query,        setQuery]        = useState("");
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [isLoggedIn]                    = useState(false);
   const [mounted,      setMounted]      = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
   const [requestOpen, setRequestOpen] = useState(false);
@@ -196,15 +207,49 @@ export default function LocationsPage() {
   };
 
   const closeBurgerMenu = () => setMenuOpen(false);
-  const burgerActions = {
-    "Top Lowest": closeBurgerMenu,
-    "Most Visited": closeBurgerMenu,
-    Locations: closeBurgerMenu,
-    Nearest: closeBurgerMenu,
-    username: closeBurgerMenu,
-    "Switch as Admin": closeBurgerMenu,
-    "Log Out": closeBurgerMenu,
-  };
+  const navigate = useNavigate();
+
+const burgerActions = {
+  "Top Lowest": () => {
+    setMenuOpen(false);
+  },
+
+  "Most Visited": () => {
+    setMenuOpen(false);
+  },
+
+  Locations: () => {
+    setMenuOpen(false);
+  },
+
+  Nearest: () => {
+    setMenuOpen(false);
+  },
+
+  [user?.userName]: () => {
+    setMenuOpen(false);
+    navigate("/profile");
+  },
+
+  "Switch as Admin": () => {
+    setMenuOpen(false);
+
+    if(user?.userPermissionLevel > 0){
+      navigate("/admin");
+    }
+  },
+
+  "Log Out": () => {
+    setMenuOpen(false);
+    logoutSession();
+    navigate("/login");
+  },
+
+  "Log In": () => {
+    setMenuOpen(false);
+    navigate("/login");
+  }
+};
 
   const selectedFuels = activeStation?.fuels ?? [
     { id: 1, name: "Blaze 100 Euro 6", price: "069.25" },
@@ -398,7 +443,30 @@ export default function LocationsPage() {
         <div className="lp-nav-row">
           <div className="lp-nav-left">
             <button className="lp-icon-btn" onClick={() => { setMenuOpen(v => !v); setSettingsOpen(false); }}><FaBars /></button>
-            {menuOpen && <BurgerDropdown actions={burgerActions} />}
+{menuOpen && (
+<BurgerDropdown
+items={[
+"Top Lowest",
+"Most Visited",
+"Locations",
+"Nearest",
+
+...(loggedIn
+? [
+    user?.userName,
+
+    ...(user?.userPermissionLevel > 0
+      ? ["Switch as Admin"]
+      : []),
+
+    "Log Out",
+  ]
+: ["Log In"])
+]}
+
+actions={burgerActions}
+/>
+)}
             <button className="lp-icon-btn"><FaSearch /></button>
             <input
               type="text"
@@ -414,9 +482,27 @@ export default function LocationsPage() {
           </div>
 
           {/* Centre logo */}
-          <a href="/" style={{ position: "absolute", left: "50%", transform: "translateX(-50%) translateY(1vw)", zIndex: 10 }}>
-            <img src={philUpLogo} alt="Phil Up" style={{ width: "10vw", height: "10vw" }} />
-          </a>
+<div
+onClick={()=>{
+navigate("/");
+}}
+style={{
+position:"absolute",
+left:"50%",
+transform:"translateX(-50%) translateY(1vw)",
+zIndex:10,
+cursor:"pointer"
+}}
+>
+<img
+src={philUpLogo}
+alt="Phil Up"
+style={{
+width:"10vw",
+height:"10vw"
+}}
+/>
+</div>
 
           <div className="lp-nav-right">
             <button className="lp-icon-btn"><FaBell /></button>
@@ -441,10 +527,54 @@ export default function LocationsPage() {
 
         {settingsOpen && (
           <div className="lp-dropdown" style={{ left: "auto", right: "2.5vw" }}>
-            {isLoggedIn
-              ? <><a href="/profile" className="lp-drop-link">Profile</a><a href="/settings" className="lp-drop-link">Settings</a></>
-              : <a href="/login" className="lp-drop-link">Log In</a>
-            }
+              {loggedIn ? (
+<>
+<p
+className="lp-drop-item"
+onClick={()=>{
+setSettingsOpen(false);
+navigate("/profile");
+}}
+>
+Profile
+</p>
+
+{user?.userPermissionLevel > 0 && (
+<p
+className="lp-drop-item"
+onClick={()=>{
+setSettingsOpen(false);
+navigate("/admin");
+}}
+>
+Switch as Admin
+</p>
+)}
+
+<p
+className="lp-drop-item"
+onClick={()=>{
+setSettingsOpen(false);
+logoutSession();
+navigate("/login");
+}}
+>
+Log Out
+</p>
+</>
+) : (
+
+<p
+className="lp-drop-item"
+onClick={()=>{
+setSettingsOpen(false);
+navigate("/login");
+}}
+>
+Log In
+</p>
+
+)}
           </div>
         )}
       </div>

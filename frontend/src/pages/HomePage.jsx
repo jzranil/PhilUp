@@ -3,6 +3,7 @@ import { FaBars, FaBell, FaFacebookSquare, FaInstagramSquare, FaLinkedin, FaSear
 import { FaSquareXTwitter } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import BurgerDropdown from "../components/BurgerDropdown";
+import { getSessionUser, logoutSession } from "../utils/session";
 
 // Asset imports
 import philUpLogo from "../assets/Phil Up 2.png";
@@ -80,12 +81,15 @@ const StationCard = ({ brandLogo, stationAdd, onSelect }) => (
 
 export default function HomePage() {
   const navigate = useNavigate();
+
+ const user = getSessionUser();
+ const isLoggedIn = !!user;
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchTab, setActiveSearchTab] = useState("results"); // results | nearest | topVisits | favorites
-  const [isLoggedIn] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
   const [mapSrc, setMapSrc] = useState("");
   const [navZ, setNavZ] = useState(300);
@@ -173,14 +177,43 @@ export default function HomePage() {
   };
 
   const burgerActions = {
-    "Top Lowest": () => {},
-    "Most Visited": () => openSearch("topVisits"),
-    Locations: goToLocations,
-    Nearest: () => openSearch("nearest"),
-    username: () => openSearch("topVisits"),
-    "Switch as Admin": () => openSearch("favorites"),
-    "Log Out": () => openSearch("nearest"),
-  };
+"Top Lowest": () => {
+  setMenuOpen(false);
+},
+"Most Visited": () => {
+  setMenuOpen(false);
+  openSearch("topVisits");
+},
+  Locations: goToLocations,
+Nearest: () => {
+  setMenuOpen(false);
+  openSearch("nearest");
+},
+
+[user?.userName]: () => {
+   setMenuOpen(false);
+   navigate("/profile");
+},
+
+  "Switch as Admin": () => {
+  setMenuOpen(false);
+
+  if(user?.userPermissionLevel > 0){
+      navigate("/admin");
+  }
+},
+
+  "Log Out": () => {
+  setMenuOpen(false);
+  logoutSession();
+  navigate("/login");
+},
+
+ "Log In": () => {
+    setMenuOpen(false);
+    navigate("/login");
+}
+};
 
   const filteredStations = MOCK_NEAREST.filter((s) =>
     s.stationAdd.toLowerCase().includes(searchQuery.toLowerCase())
@@ -349,8 +382,29 @@ export default function HomePage() {
             >
               <FaBars />
             </button>
-            {menuOpen && <BurgerDropdown actions={burgerActions} />}
-            <div className="flex flex-row flex-nowrap justify-between items-center" style={{ width: "17.5vw" }}>
+{menuOpen && (
+  <BurgerDropdown
+    items={[
+      "Top Lowest",
+      "Most Visited",
+      "Locations",
+      "Nearest",
+
+      ...(isLoggedIn
+        ? [
+            user?.userName,
+            
+            ...(user?.userPermissionLevel > 0
+              ? ["Switch as Admin"]
+              : []),
+
+            "Log Out",
+          ]
+        : ["Log In"]),
+    ]}
+    actions={burgerActions}
+  />
+)}            <div className="flex flex-row flex-nowrap justify-between items-center" style={{ width: "17.5vw" }}>
               <button
                 onClick={handleSearchIcon}
                 className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer"
@@ -372,9 +426,24 @@ export default function HomePage() {
 
           {/* Center: Logo */}
           <div className="flex justify-center items-center" >
-            <a className="absolute" href="/" style={{ marginTop: "5vw", zIndex: searchOpen ? 500 : "inherit" }}>
-              <img src={philUpLogo} alt="Phil Up" style={{ width: "12.5vw", height: "12.5vw" }} />
-            </a>
+            <div
+  className="absolute"
+  onClick={() => navigate("/")}
+  style={{
+    marginTop:"5vw",
+    zIndex: searchOpen ? 500 : "inherit",
+    cursor:"pointer"
+  }}
+>
+  <img
+    src={philUpLogo}
+    alt="Phil Up"
+    style={{
+      width:"12.5vw",
+      height:"12.5vw"
+    }}
+  />
+</div>
           </div>
 
           {/* Right: Bell + Profile */}
@@ -481,26 +550,66 @@ export default function HomePage() {
 
         {/* Settings Dropdown */}
         {settingsOpen && (
-          <div
-            style={{
-              display: "block", color: "#1c618c", fontWeight: 700,
-              fontFamily: '"Roboto Mono", monospace', fontSize: "2vw",
-              backgroundColor: "#fffbf4", width: "20.5vw",
-              borderRadius: "0 0 2vw 2vw", border: "0.25vw solid #1c618c",
-              boxSizing: "border-box", padding: "2vw",
-              position: "absolute", right: "2.5vw",
-            }}
-          >
-            {isLoggedIn ? (
-              <>
-                <a href="/profile" className="block no-underline text-[#1c618c] mb-2">Profile</a>
-                <a href="/settings" className="block no-underline text-[#1c618c]">Settings</a>
-              </>
-            ) : (
-              <a href="/login" className="block no-underline text-[#1c618c]">Log In</a>
-            )}
-          </div>
-        )}
+  <div
+    style={{
+      display: "block",
+      color: "#1c618c",
+      fontWeight: 700,
+      fontFamily: '"Roboto Mono", monospace',
+      fontSize: "2vw",
+      backgroundColor: "#fffbf4",
+      width: "20.5vw",
+      borderRadius: "0 0 2vw 2vw",
+      border: "0.25vw solid #1c618c",
+      padding: "2vw",
+      position: "absolute",
+      right: "2.5vw",
+    }}
+  >
+    {isLoggedIn ? (
+      <>
+        <p
+          style={{cursor:"pointer"}}
+onClick={() => {
+  setSettingsOpen(false);
+  navigate("/profile");
+}}        >
+{user?.userName}
+        </p>
+
+       {user?.userPermissionLevel > 0 && (
+  <p
+    style={{cursor:"pointer"}}
+    onClick={() => {
+      setSettingsOpen(false);
+      navigate("/admin");
+    }}
+  >
+    Switch as Admin
+  </p>
+)}
+
+        <p
+          style={{cursor:"pointer"}}
+          onClick={()=>{
+    setSettingsOpen(false);
+    logoutSession();
+    navigate("/login");
+}}
+        >
+          Log Out
+        </p>
+      </>
+    ) : (
+      <p
+        style={{cursor:"pointer"}}
+        onClick={() => navigate("/login")}
+      >
+        Log In
+      </p>
+    )}
+  </div>
+)}
       </div>
 
       {/* ====== HERO HEADER ====== */}

@@ -1,41 +1,10 @@
 import UserInfo from "../models/userInfoModel.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export const createUserInfo = async (req, res) => {
   try {
-    const { 
-      userFName, 
-      userLName, 
-      userBirthDate, 
-      userAddress, 
-      userEmail, 
-      userContact, 
-      userName, 
-      userPassword 
-    } = req.body;    
-    
-    // Check for duplicates in unique fields
-    const userExist = await UserInfo.findOne({
-      $or: [
-        { userEmail },
-        { userContact },
-        { userName }
-      ]
-    });    
-    
-    // Excellent logic here to tell the frontend exactly what failed
-    if (userExist) {
-      if (userExist.userEmail === userEmail) {
-        return res.status(400).json({ message: "This email address is already registered." });
-      }
-      if (userExist.userContact === userContact) {
-        return res.status(400).json({ message: "This contact number is already registered." });
-      }
-      if (userExist.userName === userName) {
-        return res.status(400).json({ message: "This username is already taken." });
-      }
-    }    
-    
-    const newUserInfo = new UserInfo({
+    const {
       userFName,
       userLName,
       userBirthDate,
@@ -43,13 +12,69 @@ export const createUserInfo = async (req, res) => {
       userEmail,
       userContact,
       userName,
-      userPassword // Note: Consider using bcrypt to hash this in the future!
+      userPassword,
+    } = req.body;
+
+    const userExist = await UserInfo.findOne({
+      $or: [
+        { userEmail },
+        { userContact },
+        { userName }
+      ]
     });
-    
-    const savedData = await newUserInfo.save();
-    res.status(201).json(savedData);    
-  } catch (error) {
-    res.status(500).json({ errorMessage: error.message });
+
+    if (userExist) {
+
+      if(userExist.userEmail===userEmail){
+        return res.status(400).json({
+          message:"Email already exists"
+        });
+      }
+
+      if(userExist.userName===userName){
+        return res.status(400).json({
+          message:"Username already exists"
+        });
+      }
+
+      if(userExist.userContact===userContact){
+        return res.status(400).json({
+          message:"Contact already exists"
+        });
+      }
+
+    }
+
+    const hashedPassword =
+      await bcrypt.hash(userPassword,10);
+
+    const newUser=new UserInfo({
+
+      userFName,
+      userLName,
+      userBirthDate,
+      userAddress,
+      userEmail,
+      userContact,
+      userName,
+      userPassword:hashedPassword
+
+    });
+
+    await newUser.save();
+
+    res.status(201).json({
+      message:"Account created successfully"
+    });
+
+  }
+
+  catch(error){
+
+    res.status(500).json({
+      errorMessage:error.message
+    });
+
   }
 };
 
@@ -137,5 +162,51 @@ export const deleteUserInfo = async (req, res) => {
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     res.status(500).json({ errorMessage: error.message });
+  }
+};
+
+export const loginUser = async (req, res) => {
+  try {
+    const { userName, userPassword } = req.body;
+
+    const user = await UserInfo.findOne({ userName });
+
+    if (!user) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    const match = await bcrypt.compare(userPassword, user.userPassword);
+
+    if (!match) {
+      return res.status(401).json({ message: "Wrong password" });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        name: user.userName,
+      },
+      process.env.JWT_SECRET || "philupsecret",
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        userFName: user.userFName,
+        userLName: user.userLName,
+        userEmail: user.userEmail,
+        userName: user.userName,
+        userPermissionLevel: user.userPermissionLevel,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: error.message,
+    });
   }
 };

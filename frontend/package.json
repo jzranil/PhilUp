@@ -11,6 +11,7 @@
     "tail-init": "tailwindcss init -p"
   },
   "dependencies": {
+    "@react-google-maps/api": "^2.20.8",
     "@tailwindcss/postcss": "^4.3.0",
     "axios": "^1.16.1",
     "lucide-react": "^1.16.0",

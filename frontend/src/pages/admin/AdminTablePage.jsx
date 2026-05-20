@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import axios from "axios";
 import AdminLayout from "./AdminLayout";
 import { getSessionUser } from "../../utils/session";
+import { useLoadScript, Autocomplete } from "@react-google-maps/api";
 
 const getLogoUrl = (brandName) => {
   // Guard clause to handle missing or undefined brand names gracefully
@@ -114,6 +115,12 @@ export default function AdminTablePage({ tableKey }) {
   const [users, setUsers] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [autocomplete, setAutocomplete] = useState(null);
+
+const { isLoaded } = useLoadScript({
+googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+  libraries: ["places"],
+});
 
   const [locationModalOpen, setLocationModalOpen] = useState(false);
 const [priceModalOpen, setPriceModalOpen] = useState(false);
@@ -126,8 +133,8 @@ const [locationForm, setLocationForm] = useState({
   stationLat: "",
   stationLong: "",
   uploadedBy: getSessionUser()?._id || "",
-  isAccepted: 1,
-  forEval: 0,
+  isAccepted: 0,
+  forEval: 1,
 });
 
 const [priceForm, setPriceForm] = useState({
@@ -135,8 +142,8 @@ const [priceForm, setPriceForm] = useState({
   fuelTypeID: "",
   fuelPrice: "",
   uploadedBy: getSessionUser()?._id || "",
-  isAccepted: 1,
-  forEval: 0,
+  isAccepted: 0,
+  forEval: 1,
 });
 
   const [selectedUser, setSelectedUser] = useState(null);
@@ -588,17 +595,24 @@ const handleSaveLocation = async () => {
   try {
     if (modalMode === "add") {
       const res = await axios.post(
-        "http://localhost:9000/api/station-locations",
-        locationForm
-      );
-
-      setLocations((prev) => [...prev, res.data]);
+  "http://localhost:9000/api/station-locations",
+  {
+    ...locationForm,
+    isAccepted: 0,
+    forEval: 1,
+  }
+);
+alert("Submitted for review successfully.");
     } else {
       if (!selectedRecord) return;
 
       const res = await axios.put(
         `http://localhost:9000/api/station-locations/${selectedRecord._id}`,
-        locationForm
+        {
+          ...locationForm,
+          isAccepted: 0,
+          forEval: 1,
+        }
       );
 
       setLocations((prev) =>
@@ -620,17 +634,24 @@ const handleSavePrice = async () => {
   try {
     if (modalMode === "add") {
       const res = await axios.post(
-        "http://localhost:9000/api/fuel-prices",
-        priceForm
-      );
-
-      setPrices((prev) => [...prev, res.data]);
+  "http://localhost:9000/api/fuel-prices",
+  {
+    ...priceForm,
+    isAccepted: 0,
+    forEval: 1,
+  }
+);
+alert("Submitted for review successfully.");
     } else {
       if (!selectedRecord) return;
 
       const res = await axios.put(
         `http://localhost:9000/api/fuel-prices/${selectedRecord._id}`,
-        priceForm
+        {
+          ...priceForm,
+          isAccepted: 0,
+          forEval: 1,
+        }
       );
 
       setPrices((prev) =>
@@ -676,8 +697,8 @@ const handleSavePrice = async () => {
         stationLat: "",
         stationLong: "",
         uploadedBy: getSessionUser()?._id || "",
-        isAccepted: 1,
-        forEval: 0,
+        isAccepted: 0,
+        forEval: 1,
       });
       setLocationModalOpen(true);
     }}
@@ -697,8 +718,8 @@ const handleSavePrice = async () => {
         fuelTypeID: "",
         fuelPrice: "",
         uploadedBy: getSessionUser()?._id || "",
-        isAccepted: 1,
-        forEval: 0,
+        isAccepted: 0,
+        forEval: 1,
       });
       setPriceModalOpen(true);
     }}
@@ -874,26 +895,58 @@ placeholder={
         ))}
       </select>
 
-      <input
-        style={modalInputStyle}
-        placeholder="Station Address"
-        value={locationForm.stationAddress}
-        onChange={(e) => setLocationForm({ ...locationForm, stationAddress: e.target.value })}
-      />
+      {isLoaded ? (
+  <Autocomplete
+    onLoad={(auto) => setAutocomplete(auto)}
+    onPlaceChanged={() => {
+      const place = autocomplete?.getPlace();
 
-      <input
-        style={modalInputStyle}
-        placeholder="Latitude"
-        value={locationForm.stationLat}
-        onChange={(e) => setLocationForm({ ...locationForm, stationLat: e.target.value })}
-      />
+      if (!place?.geometry?.location) {
+        alert("Please select a valid location from the dropdown.");
+        return;
+      }
 
-      <input
-        style={modalInputStyle}
-        placeholder="Longitude"
-        value={locationForm.stationLong}
-        onChange={(e) => setLocationForm({ ...locationForm, stationLong: e.target.value })}
-      />
+      setLocationForm({
+        ...locationForm,
+        stationAddress: place.formatted_address || place.name || "",
+        stationLat: place.geometry.location.lat(),
+        stationLong: place.geometry.location.lng(),
+      });
+    }}
+  >
+    <input
+      style={modalInputStyle}
+      placeholder="Search station address"
+      value={locationForm.stationAddress}
+      onChange={(e) =>
+        setLocationForm({
+          ...locationForm,
+          stationAddress: e.target.value,
+        })
+      }
+    />
+  </Autocomplete>
+) : (
+  <input
+    style={modalInputStyle}
+    placeholder="Loading Google Maps..."
+    disabled
+  />
+)}
+
+     <input
+  style={modalInputStyle}
+  placeholder="Latitude"
+  value={locationForm.stationLat}
+  readOnly
+/>
+
+<input
+  style={modalInputStyle}
+  placeholder="Longitude"
+  value={locationForm.stationLong}
+  readOnly
+/>
 
       <div style={modalButtonRowStyle}>
         <button style={modalCancelButtonStyle} onClick={() => setLocationModalOpen(false)}>

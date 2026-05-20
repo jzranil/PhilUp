@@ -618,49 +618,6 @@ setRegPass2("");
           />
 
           <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              background: "#fff",
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-              fontSize: "0.85rem",
-              color: "#444",
-              cursor: "pointer",
-              fontWeight: "500",
-              marginBottom: "10px",
-              width: "245px",
-              height: "46px",
-              padding: "0 14px",
-            }}
-          >
-            <GoogleIcon /> Sign in with Google
-          </button>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              background: "#1877F2",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "0.85rem",
-              color: "#fff",
-              cursor: "pointer",
-              fontWeight: "600",
-              marginBottom: "24px",
-              width: "245px",
-              height: "46px",
-              padding: "0 14px",
-            }}
-          >
-            <FacebookIcon /> Continue with Facebook
-          </button>
-
-          <button
   onClick={handleLogin}
   style={{
     width: "220px",

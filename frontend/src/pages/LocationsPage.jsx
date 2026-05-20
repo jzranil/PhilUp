@@ -10,10 +10,10 @@ import {
 } from "../utils/session";
 
 import philUpLogo from "../assets/Phil UP 2.png";
-import petronLogo from "../assets/PetronLogo.png";
-import shellLogo  from "../assets/ShellLogo.png";
-import seaoilLogo from "../assets/SeaoilLogo.png";
-import unioilLogo from "../assets/UnoFuelLogo.png";
+import petronLogo from "../assets/brand-images/PetronLogo.png";
+import shellLogo  from "../assets/brand-images/ShellLogo.png";
+import seaoilLogo from "../assets/brand-images/SeaoilLogo.png";
+import unioilLogo from "../assets/brand-images/UnoFuelLogo.png";
 
 
 

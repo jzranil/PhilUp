@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaBars, FaBell, FaSearch, FaUserCircle } from "react-icons/fa";
 import philUpLogo from "../assets/Phil Up 2.png";
-import shellLogo from "../assets/ShellLogo.png";
+import shellLogo from "../assets/brand-images/ShellLogo.png";
 import { getSessionUser, logoutSession } from "../utils/session";
 
 // ─── Replace with real API call using `id` from useParams ───────────────────

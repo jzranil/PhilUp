@@ -5,7 +5,8 @@ import {
   getAllStationLocations,
   getStationLocationById,
   updateStationLocation,
-  getStationLocationRequest // Added missing import
+  getStationLocationRequest, // Added missing import
+  getStationLocationApproved // Added missing import
 } from "../controllers/stationLocationController.js";
 
 const route = express.Router();
@@ -19,5 +20,6 @@ route.delete("/station-locations/:id", deleteStationLocation);
 
 // Route for fetching pending evaluation requests
 route.get("/station-location-requests", getStationLocationRequest);
+route.get("/station-locations/coverage", getStationLocationApproved); // Added route for approved station locations
 
 export default route;

@@ -80,16 +80,19 @@ const StationCard = ({ brandLogo, stationAdd, onSelect }) => (
 );
 
 export default function HomePage() {
+  const [locations, setLocations] = useState([]);
+  const [brands, setBrands] = useState([]);
+
   const navigate = useNavigate();
 
- const user = getSessionUser();
- const isLoggedIn = !!user;
+  const user = getSessionUser();
+  const isLoggedIn = !!user;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSearchTab, setActiveSearchTab] = useState("results"); // results | nearest | topVisits | favorites
+  const [activeSearchTab, setActiveSearchTab] = useState("results"); 
   const [locationGranted, setLocationGranted] = useState(false);
   const [mapSrc, setMapSrc] = useState("");
   const [navZ, setNavZ] = useState(300);
@@ -284,16 +287,17 @@ Nearest: () => {
         .home-search-panel {
           position: fixed;
           left: 50%;
-          top: clamp(112px, 12vw, 168px);
+          top: clamp(112px, 7.9vw, 168px);
           transform: translateX(-50%);
           z-index: 301;
-          width: calc(100vw - 5vw);
+          width: calc(100vw - 7vw);
           max-width: 1500px;
           max-height: calc(100vh - clamp(132px, 14vw, 190px));
           overflow-y: auto;
           box-sizing: border-box;
           border: 0.25vw solid #1c618c;
-          border-radius: 1vw;
+          border-top: none;
+          border-radius: 0 0 1vw 1vw;
           background-color: #fffbf4;
           padding: clamp(18px, 2.2vw, 34px);
           font-family: "Roboto Mono", monospace;
@@ -548,68 +552,6 @@ Nearest: () => {
           </div>
         )}
 
-        {/* Settings Dropdown */}
-        {settingsOpen && (
-  <div
-    style={{
-      display: "block",
-      color: "#1c618c",
-      fontWeight: 700,
-      fontFamily: '"Roboto Mono", monospace',
-      fontSize: "2vw",
-      backgroundColor: "#fffbf4",
-      width: "20.5vw",
-      borderRadius: "0 0 2vw 2vw",
-      border: "0.25vw solid #1c618c",
-      padding: "2vw",
-      position: "absolute",
-      right: "2.5vw",
-    }}
-  >
-    {isLoggedIn ? (
-      <>
-        <p
-          style={{cursor:"pointer"}}
-onClick={() => {
-  setSettingsOpen(false);
-  navigate("/profile");
-}}        >
-{user?.userName}
-        </p>
-
-       {user?.userPermissionLevel >= 50 && (
-  <p
-    style={{cursor:"pointer"}}
-    onClick={() => {
-      setSettingsOpen(false);
-      navigate("/admin");
-    }}
-  >
-    Switch as Admin
-  </p>
-)}
-
-        <p
-          style={{cursor:"pointer"}}
-          onClick={()=>{
-    setSettingsOpen(false);
-    logoutSession();
-    navigate("/login");
-}}
-        >
-          Log Out
-        </p>
-      </>
-    ) : (
-      <p
-        style={{cursor:"pointer"}}
-        onClick={() => navigate("/login")}
-      >
-        Log In
-      </p>
-    )}
-  </div>
-)}
       </div>
 
       {/* ====== HERO HEADER ====== */}

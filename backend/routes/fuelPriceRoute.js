@@ -7,7 +7,9 @@ import {
   updateAcceptedFuelPrice,
   getFuelPriceByStationLocID, 
   getFuelPriceRequest,        
-  deletePastFuelPrices        
+  deletePastFuelPrices,
+  getFuelPriceApproved,
+  getFuelPriceApprovedByLocation   
 } from "../controllers/fuelPriceController.js";
 
 const route = express.Router();
@@ -24,6 +26,8 @@ route.get("/fuel-prices/station/:stationLocID", getFuelPriceByStationLocID);
 
 // Queue / Request routes
 route.get("/fuel-price-requests", getFuelPriceRequest);
+route.get("/fuel-price-requests/approved", getFuelPriceApproved);
+route.get("/fuel-price-requests/station/:stationLocID", getFuelPriceApprovedByLocation);
 route.delete("/fuel-price-requests/cleanup", deletePastFuelPrices);
 
 export default route;

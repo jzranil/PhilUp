@@ -92,6 +92,33 @@ export const getFuelPriceRequest = async (req, res) => {
   }
 };
 
+export const getFuelPriceApproved = async (req, res) => {
+  try {
+    const isAccepted = 1;
+    const fuelPrices = await FuelPrice.find({ isAccepted });
+    if (!fuelPrices) {
+      return res.status(404).json({ message: "Fuel price approved not found" });
+    }
+    res.status(200).json(fuelPrices);
+  } catch (error) {
+    res.status(500).json({ errorMessage: error.message });
+  }
+};
+
+export const getFuelPriceApprovedByLocation = async (req, res) => {
+  try {
+    const isAccepted = 1;
+    const stationLocID = req.params.stationLocID;
+    const fuelPrices = await FuelPrice.find({ isAccepted, stationLocID });
+    if (!fuelPrices) {
+      return res.status(404).json({ message: "Fuel price approved not found for this location" });
+    }
+    res.status(200).json(fuelPrices);
+  } catch (error) {
+    res.status(500).json({ errorMessage: error.message });
+  }
+};
+
 export const updateAcceptedFuelPrice = async (req, res) => {
   try {
     const id = req.params.id; // ID of the fuel price being approved

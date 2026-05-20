@@ -5,14 +5,14 @@ export default function BurgerDropdown({ items = DEFAULT_ITEMS, actions = {} }) 
     <div
       style={{
         position: "absolute",
-        top: "calc(100% + 0.7vw)",
-        left: 0,
+        top: "calc(100% + 3.5vw)",
+        left: "1vw",
         zIndex: 1000,
-        width: "20.5vw",
+        width: "20vw",
         minWidth: "220px",
         backgroundColor: "#fffbf4",
         border: "0.25vw solid #1c618c",
-        borderRadius: "1vw",
+        borderRadius: "0 0 1vw 1vw",
         padding: "clamp(14px, 1.4vw, 24px)",
         boxSizing: "border-box",
         color: "#1c618c",

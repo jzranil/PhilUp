@@ -122,7 +122,7 @@ googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   libraries: ["places"],
 });
 
-  const [locationModalOpen, setLocationModalOpen] = useState(false);
+const [locationModalOpen, setLocationModalOpen] = useState(false);
 const [priceModalOpen, setPriceModalOpen] = useState(false);
 const [modalMode, setModalMode] = useState("add");
 const [selectedRecord, setSelectedRecord] = useState(null);
@@ -426,7 +426,7 @@ role:
     "registered-users": ["promote", "edit", "delete"],
     "admins": ["edit", "promote", "delete"],
     "registered-locations": ["edit", "remove"],
-"gas-prices": ["edit", "remove"],
+    "gas-prices": ["edit", "remove"],
     "admin-log": [],
     "user-log": [],
   };

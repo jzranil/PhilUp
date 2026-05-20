@@ -7,6 +7,7 @@ import {
   updateStationLocation,
   getStationLocationRequest,
   getStationLocationApproved,
+  getStationLocationApprovedById,
   updateStationLocationRequest,
   deleteStationLocationRequest
 } from "../controllers/stationLocationController.js";
@@ -24,6 +25,7 @@ route.delete("/station-location-requests/:id", deleteStationLocationRequest);
 
 // Approved locations route
 route.get("/station-locations/coverage", getStationLocationApproved);
+route.get("/station-locations/coverage/:id", getStationLocationApprovedById);
 
 // ID routes LAST
 route.get("/station-locations/:id", getStationLocationById);

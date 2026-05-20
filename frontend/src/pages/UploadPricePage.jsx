@@ -21,6 +21,36 @@ export default function UploadPricePage() {
   
   const [proposed, setProposed] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [locationForm, setLocationForm] = useState({
+      brandID: "",
+      stationAddress: "",
+      stationLat: "",
+      stationLong: "",
+      uploadedBy: "",
+      isAccepted: 0,
+      forEval: 1,
+    });
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [responseBrands, responseLocations] = await Promise.all([
+          axios.get("http://localhost:9000/api/brands/"),
+          axios.get(`http://localhost:9000/api/locations/${locationId}`),
+        ]);
+        setBrands(responseBrands.data);
+        setLocationForm(responseLocations.data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch data", error);
+        setLoading(false);
+      }
+    }
+    fetchData();
+    
+  }, []);
 
   const handleProposedChange = (id, val) => setProposed(p => ({ ...p, [id]: val }));
   

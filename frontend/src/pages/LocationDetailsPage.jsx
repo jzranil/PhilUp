@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 import shellLogo from "../assets/brand-images/ShellLogo.png";
+import StationMap from '../components/StationMap';
+import GasPriceBoard from '../components/GasPriceBoard';
 
 // Replace with API integration
 const MOCK_STATION = {
@@ -22,44 +25,94 @@ export default function LocationDetailsPage() {
   // Example: Fetch data based on locationId here
   // useEffect(() => { fetchStation(locationId) }, [locationId]);
 
+  const [brands, setBrands] = useState([]);
+  const [userUploader, setUserUploader] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [prices, setPrices] = useState([]);
+  const [fuelTypes, setFuelTypes] = useState([]);
+  const [locationForm, setLocationForm] = useState({
+      brandID: "",
+      stationAddress: "",
+      stationLat: "",
+      stationLong: "",
+      uploadedBy: "",
+      isAccepted: 0,
+      forEval: 1,
+    });
+  const [brandForm, setBrandForm] = useState({
+      brandDesc: "",
+      brandImage: ""
+    });
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [responseBrands, responseLocations, responsePrices, responseFuelTypes] = await Promise.all([
+          axios.get("http://localhost:9000/api/brands/"),
+          axios.get(`http://localhost:9000/api/station-locations/coverage/${locationId}`),
+          axios.get(`http://localhost:9000/api/fuel-prices/station/${locationId}`),
+          axios.get(`http://localhost:9000/api/fuel-types/`),
+        ]);
+
+        const brandsData = responseBrands.data;
+        const locationData = responseLocations.data;
+        const pricesData = responsePrices.data;
+        const fuelTypesData = responseFuelTypes.data;
+        
+        const latestPrice = pricesData.reduce((latest, price) => {
+          return new Date(price.dateCreated) > new Date(latest.dateCreated) ? price : latest;
+        }, pricesData[0]);
+        const uploadedByUser = latestPrice? await axios.get(`http://localhost:9000/api/users/${latestPrice.uploadedBy}`) : null;
+        setUserUploader(uploadedByUser?`Uploaded by ${uploadedByUser.data.userName}` : "No price updates yet");
+        const matchedBrand = brandsData.find(b => b._id === locationData.brandID);
+
+        setBrands(brandsData);
+        setLocationForm(locationData);
+        setPrices(pricesData);
+        setBrandForm(matchedBrand);
+        setFuelTypes(fuelTypesData);
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch data", error);
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [locationId]);
+
   const station = MOCK_STATION; 
 
   return (
     <div style={{ display: "flex", gap: "20px", padding: "2vw", position: "relative", zIndex: 2 }}>
       {/* LEFT COLUMN */}
       <div style={{ width: "clamp(280px, 38%, 520px)", flexShrink: 0 }}>
-        <div className="ldp-station-header">
-          <img src={station.brandLogo} alt={station.brandName} className="ldp-brand-logo" />
-          <p className="ldp-station-addr">{station.stationAdd}</p>
+        <div className="flex items-center gap-4 m-4">
+          <img style={{ height: "6vw" }} src={brandForm.brandImage} alt={brandForm.brandDesc} className="ldp-brand-logo" />
+          <p className="text-[#1c618c] font-bold">{locationForm.stationAddress}</p>
         </div>
 
-        <div className="ldp-price-box">
-          {station.fuels.map(fuel => (
-            <div key={fuel.id}>
-              <p className="ldp-fuel-name">{fuel.name}</p>
-              <div className="ldp-price-digits">{fuel.price}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="ldp-blue-bar">Last updated by {station.lastUpdatedBy}</div>
+        <GasPriceBoard 
+          gasData={prices.map(price => {
+            return {
+              fuelDesc: price.fuelDesc || "Unknown Fuel",
+              fuelPrice: price.fuelPrice.toFixed(2)
+            };
+          })}
+        />
+        {userUploader && <div className="text-[#a1e3f9] font-bold font-size-lg mt-2">{userUploader}</div>}
 
         <button 
-          className="ldp-bar-btn" 
+          className="text-[#a1e3f9] font-bold font-size-lg mt-4 px-4 py-2 underline hover:opacity-80 transition-opacity" 
           onClick={() => navigate(`/upload-price/${locationId}`)}
         >
           Request Update?
         </button>
       </div>
 
-      {/* RIGHT COLUMN */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <iframe
-          src={station.mapSrc}
-          className="ldp-map-frame"
-          style={{ width: "100%", height: "70vh", borderRadius: "10px", border: "none" }}
-          allowFullScreen loading="lazy"
-        />
+      {/* RIGHT MAP DISPLAY */}
+      <div style={{ width: "60vw" }}>
+        <StationMap locationForm={locationForm} />
       </div>
     </div>
   );

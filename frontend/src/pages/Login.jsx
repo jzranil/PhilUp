@@ -376,19 +376,14 @@ const handleLogin = async () => {
   userName: username,
   userPassword: password,
 });
-
-console.log("LOGIN USER:", res.data.user);
-
 localStorage.setItem("token", res.data.token);
 localStorage.setItem("user", JSON.stringify(res.data.user));
 
-navigate("/profile");
-
 if (res.data.user.userPermissionLevel >= 50) {
-        navigate("/admin");
-    } else {
-      navigate("/");
-    }
+    navigate("/admin");
+} else {
+    navigate("/profile");
+}
   } catch (error) {
     alert(error.response?.data?.message || "Login failed.");
   }

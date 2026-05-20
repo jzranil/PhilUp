@@ -375,24 +375,13 @@ useEffect(() => {
               width: "25vw",
             }}
           >
-            <button className="nav-btn">
-              <Menu size="1.8vw" />
-            </button>
             <button className="nav-btn" style={{ padding: 0 }}>
-              <img
-                src={SearchIcon}
-                alt="Search"
-                style={{
-                  width: "1.5vw",
-                  height: "1.5vw",
-                  objectFit: "contain",
-                }}
-              />
+              
             </button>
             <input
+              readOnly
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search stations..."
               style={{
                 border: "none",
                 outline: "none",
@@ -415,14 +404,14 @@ useEffect(() => {
             }}
           >
           <div
-  onClick={() => navigate("/")}
-  style={{
-    position: "absolute",
-    top: "0.5vw",
-    zIndex: 301,
-    cursor: "pointer"
-  }}
->
+            onClick={() => navigate("/")}
+            style={{
+              position: "absolute",
+              top: "0.5vw",
+              zIndex: 301,
+              cursor: "pointer"
+            }}
+          >
               <img
                 src={PhilUpLogo}
                 alt="Phil UP Logo"
@@ -431,23 +420,7 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* Right */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              alignItems: "center",
-              gap: "1.5vw",
-              width: "25vw",
-            }}
-          >
-            <button className="nav-btn">
-              <Bell size="1.8vw" />
-            </button>
-            <button className="nav-btn">
-              <User size="2.1vw" />
-            </button>
-          </div>
+          
         </div>
 
         {/* Dividers */}
@@ -458,6 +431,7 @@ useEffect(() => {
                 width: "25vw",
                 height: 0,
                 border: "0.22vw solid #1c618c",
+                borderRadius: "1vw",
                 margin: "0.85vw 1vw",
               }}
             />
@@ -467,6 +441,7 @@ useEffect(() => {
                 width: "25vw",
                 height: 0,
                 border: "0.22vw solid #1c618c",
+                borderRadius: "1vw",
                 margin: "0.85vw 1vw",
               }}
             />
@@ -477,6 +452,7 @@ useEffect(() => {
                 width: "20vw",
                 height: 0,
                 border: "0.22vw solid #1c618c",
+                borderRadius: "1vw",
                 margin: "0.5vw 1vw",
               }}
             />
@@ -487,6 +463,7 @@ useEffect(() => {
                 width: "20vw",
                 height: 0,
                 border: "0.22vw solid #1c618c",
+                borderRadius: "1vw",
                 margin: "0.5vw 1vw",
               }}
             />

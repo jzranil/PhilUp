@@ -145,13 +145,11 @@ useEffect(() => {
               width: "25vw",
             }}
           >
-            <button className="nav-btn" aria-label="Open menu">
-              <Menu size="1.8vw" />
-            </button>
             <img
               src={SearchIcon}
               alt=""
               style={{
+                marginLeft: "1vw",
                 width: "1.5vw",
                 height: "1.5vw",
                 objectFit: "contain",
@@ -160,7 +158,7 @@ useEffect(() => {
             <input
               value={searchQuery}
               onChange={(event) => onSearchChange?.(event.target.value)}
-              placeholder="Search admin tables..."
+              placeholder="Search tables..."
               style={{
                 border: "none",
                 outline: "none",
@@ -202,9 +200,7 @@ useEffect(() => {
               width: "25vw",
             }}
           >
-            <button className="nav-btn" aria-label="Admin account">
-              <User size="2.1vw" />
-            </button>
+            
           </div>
         </div>
 

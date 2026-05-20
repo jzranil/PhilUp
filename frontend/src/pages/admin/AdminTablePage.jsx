@@ -115,6 +115,30 @@ export default function AdminTablePage({ tableKey }) {
   const [fuelTypes, setFuelTypes] = useState([]);
   const [logs, setLogs] = useState([]);
 
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+const [priceModalOpen, setPriceModalOpen] = useState(false);
+const [modalMode, setModalMode] = useState("add");
+const [selectedRecord, setSelectedRecord] = useState(null);
+
+const [locationForm, setLocationForm] = useState({
+  brandID: "",
+  stationAddress: "",
+  stationLat: "",
+  stationLong: "",
+  uploadedBy: getSessionUser()?._id || "",
+  isAccepted: 1,
+  forEval: 0,
+});
+
+const [priceForm, setPriceForm] = useState({
+  stationLocID: "",
+  fuelTypeID: "",
+  fuelPrice: "",
+  uploadedBy: getSessionUser()?._id || "",
+  isAccepted: 1,
+  forEval: 0,
+});
+
   const [selectedUser, setSelectedUser] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [roleModalOpen, setRoleModalOpen] = useState(false);
@@ -394,8 +418,8 @@ role:
   const tableActionConfig = {
     "registered-users": ["promote", "edit", "delete"],
     "admins": ["edit", "promote", "delete"],
-    "registered-locations": ["remove"],
-    "gas-prices": ["remove"],
+    "registered-locations": ["edit", "remove"],
+"gas-prices": ["edit", "remove"],
     "admin-log": [],
     "user-log": [],
   };
@@ -413,63 +437,95 @@ role:
   }, [page.rows, searchQuery]);
 
   const handleActionUpdate = async (id, action) => {
-  const user = users.find((u) => u._id === id);
+  if (tableKey === "registered-locations" && action === "edit") {
+    const record = locations.find((loc) => loc._id === id);
+    if (!record) return;
 
-if (
-   tableKey==="registered-users" ||
-   tableKey==="admins"
-){
-      if (action === "delete") {
-  const currentUser = getSessionUser();
-
-  // Prevent deleting yourself
-  if (user._id === currentUser?._id) {
-    alert("You cannot delete your own account.");
+    setSelectedRecord(record);
+    setModalMode("edit");
+    setLocationForm({
+      brandID: record.brandID || "",
+      stationAddress: record.stationAddress || "",
+      stationLat: record.stationLat || "",
+      stationLong: record.stationLong || "",
+      uploadedBy: record.uploadedBy || getSessionUser()?._id || "",
+      isAccepted: record.isAccepted ?? 1,
+      forEval: record.forEval ?? 0,
+    });
+    setLocationModalOpen(true);
     return;
   }
 
-  const confirmDelete = window.confirm(
-    "Are you sure you want to delete this user?"
-  );
+  if (tableKey === "gas-prices" && action === "edit") {
+    const record = prices.find((price) => price._id === id);
+    if (!record) return;
 
-  if (!confirmDelete) return;
+    setSelectedRecord(record);
+    setModalMode("edit");
+    setPriceForm({
+      stationLocID: record.stationLocID || "",
+      fuelTypeID: record.fuelTypeID || "",
+      fuelPrice: record.fuelPrice || "",
+      uploadedBy: record.uploadedBy || getSessionUser()?._id || "",
+      isAccepted: record.isAccepted ?? 1,
+      forEval: record.forEval ?? 0,
+    });
+    setPriceModalOpen(true);
+    return;
+  }
 
-  const superAdmins =
- users.filter(
-   u=>u.userPermissionLevel===100
- );
+  if (tableKey === "registered-locations" && action === "remove") {
+    await axios.delete(`http://localhost:9000/api/station-locations/${id}`);
+    setLocations((prev) => prev.filter((loc) => loc._id !== id));
+    return;
+  }
 
-if(
- user.userPermissionLevel===100 &&
- superAdmins.length===1
-){
-   alert(
-    "Cannot delete the only Super Admin"
-   );
-   return;
-}
+  if (tableKey === "gas-prices" && action === "remove") {
+    await axios.delete(`http://localhost:9000/api/fuel-prices/${id}`);
+    setPrices((prev) => prev.filter((p) => p._id !== id));
+    return;
+  }
 
-  await axios.delete(
-    `http://localhost:9000/api/users/${id}`
-  );
+  if (tableKey === "registered-users" || tableKey === "admins") {
+    const user = users.find((u) => u._id === id);
+    if (!user) return;
 
-  setUsers((prev) =>
-    prev.filter((u) => u._id !== id)
-  );
+    if (action === "delete") {
+      const currentUser = getSessionUser();
 
-  return;
-}
+      if (user._id === currentUser?._id) {
+        alert("You cannot delete your own account.");
+        return;
+      }
+
+      const superAdmins = users.filter((u) => u.userPermissionLevel === 100);
+
+      if (user.userPermissionLevel === 100 && superAdmins.length === 1) {
+        alert("Cannot delete the only Super Admin");
+        return;
+      }
+
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete this user?"
+      );
+
+      if (!confirmDelete) return;
+
+      await axios.delete(`http://localhost:9000/api/users/${id}`);
+      setUsers((prev) => prev.filter((u) => u._id !== id));
+      return;
+    }
 
     if (action === "edit") {
       setSelectedUser(user);
       setEditForm({
- userName:user.userName||"",
- userFName:user.userFName||"",
- userLName:user.userLName||"",
- userEmail:user.userEmail||"",
- userContact:user.userContact||"",
- userAddress:user.userAddress||"",
-});
+        userName: user.userName || "",
+        userFName: user.userFName || "",
+        userLName: user.userLName || "",
+        userEmail: user.userEmail || "",
+        userContact: user.userContact || "",
+        userAddress: user.userAddress || "",
+      });
       setEditModalOpen(true);
       return;
     }
@@ -480,11 +536,6 @@ if(
       setRoleModalOpen(true);
       return;
     }
-  }
-
-  if (tableKey === "gas-prices" && action === "remove") {
-    await axios.delete(`http://localhost:9000/api/fuel-prices/${id}`);
-    setPrices((prev) => prev.filter((p) => p._id !== id));
   }
 };
 
@@ -533,6 +584,71 @@ const handleRoleSave = async () => {
   setSelectedUser(null);
 };
 
+const handleSaveLocation = async () => {
+  try {
+    if (modalMode === "add") {
+      const res = await axios.post(
+        "http://localhost:9000/api/station-locations",
+        locationForm
+      );
+
+      setLocations((prev) => [...prev, res.data]);
+    } else {
+      if (!selectedRecord) return;
+
+      const res = await axios.put(
+        `http://localhost:9000/api/station-locations/${selectedRecord._id}`,
+        locationForm
+      );
+
+      setLocations((prev) =>
+        prev.map((loc) =>
+          loc._id === selectedRecord._id ? res.data : loc
+        )
+      );
+    }
+
+    setLocationModalOpen(false);
+    setSelectedRecord(null);
+  } catch (error) {
+    console.log(error);
+    alert("Failed saving station");
+  }
+};
+
+const handleSavePrice = async () => {
+  try {
+    if (modalMode === "add") {
+      const res = await axios.post(
+        "http://localhost:9000/api/fuel-prices",
+        priceForm
+      );
+
+      setPrices((prev) => [...prev, res.data]);
+    } else {
+      if (!selectedRecord) return;
+
+      const res = await axios.put(
+        `http://localhost:9000/api/fuel-prices/${selectedRecord._id}`,
+        priceForm
+      );
+
+      setPrices((prev) =>
+        prev.map((price) =>
+          price._id === selectedRecord._id ? res.data : price
+        )
+      );
+    }
+
+    setPriceModalOpen(false);
+    setSelectedRecord(null);
+  } catch (error) {
+    console.log(error);
+    alert("Failed saving fuel price");
+  }
+};
+
+
   return (
     <AdminLayout searchQuery={searchQuery} onSearchChange={setSearchQuery}>
       <section style={cardStyle}>
@@ -545,9 +661,51 @@ const handleRoleSave = async () => {
           </div>
           <div style={{ border: "0.12vw solid #1c618c", borderRadius: "0.6vw", color: "#1c618c", fontSize: "0.85vw", fontWeight: 700, padding: "0.45vw 0.65vw", whiteSpace: "nowrap" }}>
             {filteredRows.length} Records
+            
           </div>
         </div>
+{tableKey === "registered-locations" && (
+  <button
+    style={modalSaveButtonStyle}
+    onClick={() => {
+      setModalMode("add");
+      setSelectedRecord(null);
+      setLocationForm({
+        brandID: "",
+        stationAddress: "",
+        stationLat: "",
+        stationLong: "",
+        uploadedBy: getSessionUser()?._id || "",
+        isAccepted: 1,
+        forEval: 0,
+      });
+      setLocationModalOpen(true);
+    }}
+  >
+    Add Gas Station
+  </button>
+)}
 
+{tableKey === "gas-prices" && (
+  <button
+    style={modalSaveButtonStyle}
+    onClick={() => {
+      setModalMode("add");
+      setSelectedRecord(null);
+      setPriceForm({
+        stationLocID: "",
+        fuelTypeID: "",
+        fuelPrice: "",
+        uploadedBy: getSessionUser()?._id || "",
+        isAccepted: 1,
+        forEval: 0,
+      });
+      setPriceModalOpen(true);
+    }}
+  >
+    Add Gas Price
+  </button>
+)}
         <div style={{ overflowX: "auto" }}>
           {loading ? (
             <div style={{ padding: "2vw", textAlign: "center", color: "#1c618c", fontWeight: 700 }}>
@@ -690,6 +848,115 @@ placeholder={
         </button>
         <button style={modalSaveButtonStyle} onClick={handleRoleSave}>
           Update Role
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{locationModalOpen && (
+  <div style={modalOverlayStyle}>
+    <div style={modalBoxStyle}>
+      <h2 style={modalTitleStyle}>
+        {modalMode === "add" ? "Add Gas Station" : "Edit Gas Station"}
+      </h2>
+
+      <select
+        style={modalInputStyle}
+        value={locationForm.brandID}
+        onChange={(e) => setLocationForm({ ...locationForm, brandID: e.target.value })}
+      >
+        <option value="">Select Brand</option>
+        {brands.map((brand) => (
+          <option key={brand._id} value={brand._id}>
+            {brand.brandDesc}
+          </option>
+        ))}
+      </select>
+
+      <input
+        style={modalInputStyle}
+        placeholder="Station Address"
+        value={locationForm.stationAddress}
+        onChange={(e) => setLocationForm({ ...locationForm, stationAddress: e.target.value })}
+      />
+
+      <input
+        style={modalInputStyle}
+        placeholder="Latitude"
+        value={locationForm.stationLat}
+        onChange={(e) => setLocationForm({ ...locationForm, stationLat: e.target.value })}
+      />
+
+      <input
+        style={modalInputStyle}
+        placeholder="Longitude"
+        value={locationForm.stationLong}
+        onChange={(e) => setLocationForm({ ...locationForm, stationLong: e.target.value })}
+      />
+
+      <div style={modalButtonRowStyle}>
+        <button style={modalCancelButtonStyle} onClick={() => setLocationModalOpen(false)}>
+          Cancel
+        </button>
+        <button style={modalSaveButtonStyle} onClick={handleSaveLocation}>
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{priceModalOpen && (
+  <div style={modalOverlayStyle}>
+    <div style={modalBoxStyle}>
+      <h2 style={modalTitleStyle}>
+        {modalMode === "add" ? "Add Gas Price" : "Edit Gas Price"}
+      </h2>
+
+      <select
+        style={modalInputStyle}
+        value={priceForm.stationLocID}
+        onChange={(e) => setPriceForm({ ...priceForm, stationLocID: e.target.value })}
+      >
+        <option value="">Select Station</option>
+        {locations.map((loc) => {
+          const brand = brands.find((b) => b._id === loc.brandID);
+          return (
+            <option key={loc._id} value={loc._id}>
+              {brand?.brandDesc || "Unknown Station"} - {loc.stationAddress}
+            </option>
+          );
+        })}
+      </select>
+
+      <select
+        style={modalInputStyle}
+        value={priceForm.fuelTypeID}
+        onChange={(e) => setPriceForm({ ...priceForm, fuelTypeID: e.target.value })}
+      >
+        <option value="">Select Fuel Type</option>
+        {fuelTypes.map((fuel) => (
+          <option key={fuel._id} value={fuel._id}>
+            {fuel.fuelTypeDesc}
+          </option>
+        ))}
+      </select>
+
+      <input
+        style={modalInputStyle}
+        type="number"
+        placeholder="Fuel Price"
+        value={priceForm.fuelPrice}
+        onChange={(e) => setPriceForm({ ...priceForm, fuelPrice: Number(e.target.value) })}
+      />
+
+      <div style={modalButtonRowStyle}>
+        <button style={modalCancelButtonStyle} onClick={() => setPriceModalOpen(false)}>
+          Cancel
+        </button>
+        <button style={modalSaveButtonStyle} onClick={handleSavePrice}>
+          Save
         </button>
       </div>
     </div>

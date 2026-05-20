@@ -153,7 +153,6 @@ export default function LoadingScreen() {
       {/* Logo with Nozzle */}
       <div className="loading-logo-container">
         <img src={philUpLogo} alt="Phil Up" className="loading-logo" />
-        <img src={nozzleGas} alt="Loading" className="loading-nozzle" />
       </div>
 
       {/* Loading Text */}

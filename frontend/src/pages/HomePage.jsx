@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { FaBars, FaBell, FaFacebookSquare, FaInstagramSquare, FaLinkedin, FaSearch, FaUserCircle } from "react-icons/fa";
 import { FaSquareXTwitter } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +6,8 @@ import BurgerDropdown from "../components/BurgerDropdown";
 import { getSessionUser, logoutSession } from "../utils/session";
 import axios from "axios";
 import LoadingScreen from "../components/LoadingScreen";
+import HomeSearchPanel from "../components/HomeSearchPanel";
+import GasPriceBoard from "../components/GasPriceBoard";
 
 // Asset imports
 import philUpLogo from "../assets/Phil Up 2.png";
@@ -15,21 +17,14 @@ import wave2 from "../assets/bottom wave 2.png";
 import wave3 from "../assets/bottom wave 3.png";
 import wave4 from "../assets/bottom wave 4.png";
 import petronLogo from "../assets/brand-images/PetronLogo.png";
-import shellLogo from "../assets/brand-images/ShellLogo.png";
 import image1 from "../assets/image1.png";
 import image1NoBg from "../assets/image1nobg.png";
 
-// Mock station data for UI (replace with real API calls)
-const MOCK_NEAREST = [
-  { fuelLocID: 1, brandLogo: petronLogo, stationAdd: "Petron - España Blvd, Sampaloc, Manila" },
-  { fuelLocID: 2, brandLogo: shellLogo, stationAdd: "Shell - Commonwealth Ave, Quezon City" },
-  { fuelLocID: 3, brandLogo: petronLogo, stationAdd: "Petron - EDSA, Mandaluyong City" },
-];
-const MOCK_TOP_VISITS = [
-  { fuelLocID: 1, brandLogo: petronLogo, stationAdd: "Reg Trading Rizal Avenue - Malabon Street, Sta. Cruz, Manila" },
-  { fuelLocID: 2, brandLogo: shellLogo, stationAdd: "Shell - C5 Road, Pasig City" },
-  { fuelLocID: 3, brandLogo: petronLogo, stationAdd: "Petron - Aurora Blvd, Quezon City" },
-];
+const getLogoUrl = (brandName) => {
+  if (!brandName) return ""; 
+  const fileName = brandName.replace(/\s+/g, ""); 
+  return `/src/assets/brand-images/${fileName}Logo.png`;
+};
 
 const GasPriceDigits = ({ digits = "00.00" }) => {
   const parts = digits.split(".");
@@ -48,51 +43,19 @@ const GasPriceDigits = ({ digits = "00.00" }) => {
   );
 };
 
-const StationCard = ({ brandLogo, stationAdd, onSelect }) => (
-  <div
-    className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-    style={{
-      gap: "clamp(12px, 1.2vw, 18px)",
-      padding: "clamp(10px, 1vw, 14px) 0",
-      borderBottom: "1px solid #1c618c18",
-    }}
-    onClick={onSelect}
-  >
-    <img
-      src={brandLogo}
-      alt="logo"
-      style={{
-        width: "clamp(48px, 5vw, 72px)",
-        height: "clamp(48px, 5vw, 72px)",
-        objectFit: "contain",
-        flexShrink: 0,
-      }}
-    />
-    <p
-      className="font-mono text-[#3178ad]"
-      style={{
-        fontSize: "clamp(12px, 1vw, 15px)",
-        lineHeight: 1.45,
-        flex: 1,
-      }}
-    >
-      {stationAdd}
-    </p>
-  </div>
-);
-
 export default function HomePage() {
   const [locations, setLocations] = useState([]);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [myLat, setMyLat] = useState(null);
+  const [myLng, setMyLng] = useState(null);
 
   const navigate = useNavigate();
-
   const user = getSessionUser();
   const isLoggedIn = !!user;
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchTab, setActiveSearchTab] = useState("results"); 
@@ -105,7 +68,7 @@ export default function HomePage() {
   const wave3Ref = useRef(null);
   const wave4Ref = useRef(null);
 
-  // Scroll wave animation
+  // Scroll wave animation & Data Fetching
   useEffect(() => {
     async function fetchData() {
       try {
@@ -119,7 +82,6 @@ export default function HomePage() {
       } catch (error) {
         console.error("Failed to fetch data", error);
       } finally {
-        // Add a minimum loading time for smooth UX
         setTimeout(() => setLoading(false), 1000);
       }
     }
@@ -131,6 +93,7 @@ export default function HomePage() {
       if (wave2Ref.current) wave2Ref.current.style.transform = `translate(-${scrollTop * 0.02}vw, -11vw)`;
       if (wave3Ref.current) wave3Ref.current.style.transform = `translate(${scrollTop * 0.023 - 25}vw, -4vw)`;
       if (wave4Ref.current) wave4Ref.current.style.transform = `translate(-${scrollTop * 0.0127}vw, 7vw)`;
+      
       const zVal = 300 - scrollTop;
       setNavZ(zVal);
       if (zVal < 0) {
@@ -158,6 +121,51 @@ export default function HomePage() {
       );
     }
   };
+
+  const getHaversineDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const topThreeNearest = useMemo(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          setMyLat(latitude);
+          setMyLng(longitude);
+        },
+        () => {}
+      );
+    }
+    
+    if (!myLat || !myLng) return [];
+
+    return locations
+      .map((location) => {
+        const brand = brands.find((b) => b._id === location.brandID);
+        const distance = getHaversineDistance(
+          myLat,
+          myLng,
+          location.stationLat,
+          location.stationLong
+        );
+        return { ...location, distance, brandLogo: getLogoUrl(brand?.brandDesc) };
+      })
+      .sort((a, b) => a.distance - b.distance);
+      
+  }, [myLat, myLng, locations, brands]);
 
   useEffect(() => { handleGetLocation(); }, []);
 
@@ -202,46 +210,21 @@ export default function HomePage() {
   };
 
   const burgerActions = {
-"Top Lowest": () => {
-  setMenuOpen(false);
-},
-"Most Visited": () => {
-  setMenuOpen(false);
-  openSearch("topVisits");
-},
-  Locations: goToLocations,
-Nearest: () => {
-  setMenuOpen(false);
-  openSearch("nearest");
-},
+    "Top Lowest": () => { setMenuOpen(false); },
+    "Most Visited": () => { setMenuOpen(false); openSearch("topVisits"); },
+    Locations: goToLocations,
+    Nearest: () => { setMenuOpen(false); openSearch("nearest"); },
+    [user?.userName]: () => { setMenuOpen(false); navigate("/profile"); },
+    "Switch as Admin": () => {
+      setMenuOpen(false);
+      if(user?.userPermissionLevel >= 50){ navigate("/admin"); }
+    },
+    "Log Out": () => { setMenuOpen(false); logoutSession(); navigate("/login"); },
+    "Log In": () => { setMenuOpen(false); navigate("/login"); }
+  };
 
-[user?.userName]: () => {
-   setMenuOpen(false);
-   navigate("/profile");
-},
-
-  "Switch as Admin": () => {
-  setMenuOpen(false);
-
-  if(user?.userPermissionLevel >= 50){
-  navigate("/admin");
-}
-},
-
-  "Log Out": () => {
-  setMenuOpen(false);
-  logoutSession();
-  navigate("/login");
-},
-
- "Log In": () => {
-    setMenuOpen(false);
-    navigate("/login");
-}
-};
-
-  const filteredStations = MOCK_NEAREST.filter((s) =>
-    s.stationAdd.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredStations = topThreeNearest.filter((s) =>
+    s.stationAddress?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
@@ -250,7 +233,6 @@ Nearest: () => {
 
   return (
     <>
-      {/* Font imports via style tag */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=ZCOOL+QingKe+HuangYou&display=swap');
 
@@ -295,20 +277,6 @@ Nearest: () => {
           height: 27vw; width: 50vw; object-fit: cover;
           transform: translate(80%, -144%);
         }
-        #homePageFavoritesSampleImage {
-          border-radius: 1vw; height: 12vw; width: 50vw;
-          object-fit: cover; transform: translate(0%, -60%);
-        }
-        #homePageFavoritesSampleImageOverlay {
-          position: absolute; border-radius: 1vw;
-          height: 27vw; width: 50vw; object-fit: cover;
-          transform: translate(-100%, -54%);
-        }
-        #homePageWaveDivider {
-          width: 100vw; position: absolute;
-          transform: translate(0vw, -55vw);
-          clip-path: polygon(0 16%, 100% 16%, 100% 100%, 0% 100%);
-        }
 
         .home-search-panel {
           position: fixed;
@@ -330,23 +298,10 @@ Nearest: () => {
           box-shadow: 0 18px 40px rgba(28, 97, 140, 0.16);
         }
 
-        .home-search-grid {
-          display: flex;
-          align-items: stretch;
-          gap: clamp(22px, 3vw, 46px);
-        }
-
-        .home-search-left {
-          flex: 0 0 min(48%, 520px);
-          min-width: 0;
-        }
-
-        .home-search-right {
-          flex: 1;
-          min-width: 320px;
-          color: #1c618c;
-        }
-
+        .home-search-grid { display: flex; align-items: stretch; gap: clamp(22px, 3vw, 46px); }
+        .home-search-left { flex: 0 0 min(48%, 520px); min-width: 0; }
+        .home-search-right { flex: 1; min-width: 320px; color: #1c618c; }
+        
         .home-search-title {
           color: #1c618c;
           font-weight: 700;
@@ -355,10 +310,8 @@ Nearest: () => {
           margin-bottom: clamp(12px, 1.2vw, 18px);
         }
 
-        .home-search-section + .home-search-section {
-          margin-top: clamp(22px, 2.2vw, 34px);
-        }
-
+        .home-search-section + .home-search-section { margin-top: clamp(22px, 2.2vw, 34px); }
+        
         .home-search-empty {
           color: #3178ad;
           font-size: clamp(12px, 1vw, 15px);
@@ -375,71 +328,35 @@ Nearest: () => {
         }
 
         @media (max-width: 900px) {
-          .home-search-panel {
-            top: clamp(96px, 18vw, 150px);
-            width: 92vw;
-          }
-
-          .home-search-grid {
-            flex-direction: column;
-          }
-
-          .home-search-left,
-          .home-search-right {
-            flex: 1 1 auto;
-            min-width: 0;
-            width: 100%;
-          }
+          .home-search-panel { top: clamp(96px, 18vw, 150px); width: 92vw; }
+          .home-search-grid { flex-direction: column; }
+          .home-search-left, .home-search-right { flex: 1 1 auto; min-width: 0; width: 100%; }
         }
       `}</style>
 
       {/* ====== FIXED NAVBAR ====== */}
-      <div
-        id="fixedBGNavBar"
-        style={{ position: "fixed", zIndex: navZ, transform: "translate(0%,0%)", width: "100vw" }}
-      >
-        {/* Top Nav Row */}
-        <div
-          className="flex flex-row flex-nowrap justify-between items-center w-full"
-          style={{ padding: "1.5vw 2.5vw 0 2.5vw" }}
-        >
+      <div id="fixedBGNavBar" style={{ position: "fixed", zIndex: navZ, transform: "translate(0%,0%)", width: "100vw" }}>
+        <div className="flex flex-row flex-nowrap justify-between items-center w-full" style={{ padding: "1.5vw 2.5vw 0 2.5vw" }}>
+          
           {/* Left: Hamburger + Search */}
           <div className="flex flex-row flex-nowrap justify-around items-center" style={{ width: "25vw", height: "5vw", position: "relative" }}>
-            <button
-              onClick={toggleMenu}
-              className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer"
-              aria-label="Open menu"
-            >
+            <button onClick={toggleMenu} className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer" aria-label="Open menu">
               <FaBars />
             </button>
-{menuOpen && (
-  <BurgerDropdown
-    items={[
-      "Top Lowest",
-      "Most Visited",
-      "Locations",
-      "Nearest",
-
-      ...(isLoggedIn
-        ? [
-            user?.userName,
-            
-            ...(user?.userPermissionLevel >= 50
-              ? ["Switch as Admin"]
-              : []),
-
-            "Log Out",
-          ]
-        : ["Log In"]),
-    ]}
-    actions={burgerActions}
-  />
-)}            <div className="flex flex-row flex-nowrap justify-between items-center" style={{ width: "17.5vw" }}>
-              <button
-                onClick={handleSearchIcon}
-                className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer"
-                aria-label="Search stations"
-              >
+            {menuOpen && (
+              <BurgerDropdown
+                items={[
+                  "Top Lowest",
+                  "Most Visited",
+                  "Locations",
+                  "Nearest",
+                  ...(isLoggedIn ? [user?.userName, ...(user?.userPermissionLevel >= 50 ? ["Switch as Admin"] : []), "Log Out"] : ["Log In"]),
+                ]}
+                actions={burgerActions}
+              />
+            )}
+            <div className="flex flex-row flex-nowrap justify-between items-center" style={{ width: "17.5vw" }}>
+              <button onClick={handleSearchIcon} className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer" aria-label="Search stations">
                 <FaSearch />
               </button>
               <input
@@ -455,42 +372,19 @@ Nearest: () => {
           </div>
 
           {/* Center: Logo */}
-          <div className="flex justify-center items-center" >
-            <div
-  className="absolute"
-  onClick={() => navigate("/")}
-  style={{
-    marginTop:"5vw",
-    zIndex: searchOpen ? 500 : "inherit",
-    cursor:"pointer"
-  }}
->
-  <img
-    src={philUpLogo}
-    alt="Phil Up"
-    style={{
-      width:"12.5vw",
-      height:"12.5vw"
-    }}
-  />
-</div>
+          <div className="flex justify-center items-center">
+            <div className="absolute" onClick={() => navigate("/")} style={{ marginTop: "5vw", zIndex: searchOpen ? 500 : "inherit", cursor: "pointer" }}>
+              <img src={philUpLogo} alt="Phil Up" style={{ width: "12.5vw", height: "12.5vw" }} />
+            </div>
           </div>
 
           {/* Right: Bell + Profile */}
-          <div
-            className="flex flex-row flex-nowrap justify-end items-center"
-            style={{ width: "25vw", height: "5vw" }}
-          >
+          <div className="flex flex-row flex-nowrap justify-end items-center" style={{ width: "25vw", height: "5vw" }}>
             <div className="flex flex-row flex-nowrap justify-around items-center" style={{ width: "10vw" }}>
               <button className="text-[2vw] text-[#1c618c] bg-transparent border-none cursor-pointer" aria-label="Notifications">
                 <FaBell />
               </button>
-              <button
-                onClick={toggleSettings}
-                className="flex items-center justify-center bg-transparent border-none cursor-pointer"
-                style={{ width: "3vw", height: "3vw" }}
-                aria-label="Open profile menu"
-              >
+              <button onClick={toggleSettings} className="flex items-center justify-center bg-transparent border-none cursor-pointer" style={{ width: "3vw", height: "3vw" }} aria-label="Open profile menu">
                 <FaUserCircle className="text-[2.3vw] text-[#1c618c]" />
               </button>
             </div>
@@ -498,125 +392,42 @@ Nearest: () => {
         </div>
 
         {/* Nav Dividers */}
-        <div
-          className="flex flex-col justify-between items-center w-full"
-          style={{ padding: "0 2.5vw"}}
-        >
+        <div className="flex flex-col justify-between items-center w-full" style={{ padding: "0 2.5vw" }}>
           <div className="flex flex-row flex-nowrap justify-between items-center w-full">
-              <div  style={{ width: "25vw", height: 0, borderRadius: "0.25vw", border: "0.25vw solid #1c618c", margin: "1vw" }} />
-              <div  style={{ width: "25vw", height: 0, borderRadius: "0.25vw", margin: "1vw" }} />
-              <div  style={{ width: "25vw", height: 0, borderRadius: "0.25vw", border: "0.25vw solid #1c618c", margin: "1vw" }} />
+            <div style={{ width: "25vw", height: 0, borderRadius: "0.25vw", border: "0.25vw solid #1c618c", margin: "1vw" }} />
+            <div style={{ width: "25vw", height: 0, borderRadius: "0.25vw", margin: "1vw" }} />
+            <div style={{ width: "25vw", height: 0, borderRadius: "0.25vw", border: "0.25vw solid #1c618c", margin: "1vw" }} />
           </div>
           <div className="flex flex-row flex-nowrap justify-between items-center w-full">
-              <div style={{ width: "20vw", height: 0, borderRadius: "0.25vw", border: "0.25vw solid #1c618c", margin: "1vw" }} />
-              <div style={{ width: "20vw", height: 0, borderRadius: "0.25vw", margin: "1vw" }} />
-              <div style={{ width: "20vw", height: 0, borderRadius: "0.25vw", margin: "1vw" }} />
-              <div style={{ width: "20vw", height: 0, borderRadius: "0.25vw", border: "0.25vw solid #1c618c", margin: "1vw" }} />
+            <div style={{ width: "20vw", height: 0, borderRadius: "0.25vw", border: "0.25vw solid #1c618c", margin: "1vw" }} />
+            <div style={{ width: "20vw", height: 0, borderRadius: "0.25vw", margin: "1vw" }} />
+            <div style={{ width: "20vw", height: 0, borderRadius: "0.25vw", margin: "1vw" }} />
+            <div style={{ width: "20vw", height: 0, borderRadius: "0.25vw", border: "0.25vw solid #1c618c", margin: "1vw" }} />
           </div>
         </div>
 
-        {/* Hidden Search Panel */}
-        {searchOpen && (
-          <div className="home-search-panel">
-            <div className="home-search-grid">
-              {/* Left Panel */}
-              <div className="home-search-left">
-                <section className="home-search-section">
-                  <h1 className="home-search-title">Results</h1>
-                  {searchQuery ? (
-                    filteredStations.length > 0 ? (
-                      filteredStations.map((s) => (
-                        <StationCard key={s.fuelLocID} brandLogo={s.brandLogo} stationAdd={s.stationAdd} onSelect={() => {}} />
-                      ))
-                    ) : (
-                      <p className="home-search-empty">No stations match your search.</p>
-                    )
-                  ) : (
-                    <p className="home-search-empty">Search for a station to show matching results.</p>
-                  )}
-                </section>
-
-                <section className="home-search-section">
-                  <h1 className="home-search-title">Stations Nearby</h1>
-                  {loading ? (
-                    <>
-                      <SkeletonCard />
-                      <SkeletonCard />
-                      <SkeletonCard />
-                    </>
-                  ) : (
-                    MOCK_NEAREST.map((s) => (
-                      <StationCard key={s.fuelLocID} {...s} onSelect={() => {}} />
-                    ))
-                  )}
-                </section>
-
-              {/* Top Visits */}
-              {activeSearchTab === "topVisits" && (
-                <section className="home-search-section">
-                  <h1 className="home-search-title">Top Visits</h1>
-                  {loading ? (
-                    <>
-                      <SkeletonCard />
-                      <SkeletonCard />
-                      <SkeletonCard />
-                    </>
-                  ) : (
-                    MOCK_NEAREST.map((s) => (
-                      <StationCard key={s.fuelLocID} {...s} onSelect={() => {}} />
-                    ))
-                  )}
-                </section>
-              )}
-
-              {/* Favorites */}
-              {activeSearchTab === "favorites" && (
-                <section className="home-search-section">
-                  <h1 className="home-search-title">Favorites</h1>
-                  <p className="home-search-empty">Log in to see your favorites.</p>
-                </section>
-              )}
-            </div>
-
-            {/* Right Panel — Map */}
-              <section className="home-search-right">
-                <h1 className="home-search-title">Stations Near You</h1>
-                <iframe
-                  src={mapSrc}
-                  className="home-search-map"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Search Map"
-                />
-              </section>
-            </div>
-          </div>
-        )}
-
+        <HomeSearchPanel
+          isOpen={searchOpen}
+          searchQuery={searchQuery}
+          filteredStations={filteredStations}
+          topThreeNearest={topThreeNearest}
+          loading={loading}
+          activeSearchTab={activeSearchTab}
+          mapSrc={mapSrc}
+          onSelectStation={(station) => {console.log("Selected station data:", station);
+            navigate(`/locations/${station._id}`);}
+          }
+        />
       </div>
 
       {/* ====== HERO HEADER ====== */}
-      <div
-        id="homePageContentHeader"
-        style={{ position: "relative", width: "100vw", height: "70vw", overflow: "hidden" }}
-      >
+      <div id="homePageContentHeader" style={{ position: "relative", width: "100vw", height: "70vw", overflow: "hidden" }}>
         <img id="homePageWave1" className="max-w-none" ref={wave1Ref} src={wave1} alt="wave1" />
         <img id="homePageWave2" className="max-w-none" ref={wave2Ref} src={wave2} alt="wave2" />
         <img id="homePageWave3" className="max-w-none" ref={wave3Ref} src={wave3} alt="wave3" />
         <img id="homePageWave4" className="max-w-none" ref={wave4Ref} src={wave4} alt="wave4" />
-        <img
-          src={nozzleGas}
-          alt="Gas Nozzle"
-          style={{ height: "50vw", position: "fixed", zIndex: 2, transform: "translate(-5vw, 3%)" }}
-        />
-        <div
-          style={{
-            position: "fixed", color: "#1c618c", fontWeight: 700,
-            fontFamily: '"Roboto Mono", monospace',
-            transform: "translate(35vw, 23vw)", fontSize: "6vw", zIndex: 3,
-          }}
-        >
+        <img src={nozzleGas} alt="Gas Nozzle" style={{ height: "50vw", position: "fixed", zIndex: 2, transform: "translate(-5vw, 3%)" }} />
+        <div style={{ position: "fixed", color: "#1c618c", fontWeight: 700, fontFamily: '"Roboto Mono", monospace', transform: "translate(35vw, 23vw)", fontSize: "6vw", zIndex: 3 }}>
           <p>Top Lowest</p>
           <p style={{ width: "30vw", fontSize: "2vw" }}>
             <u>Discover real-time low gas prices near you</u>
@@ -629,42 +440,23 @@ Nearest: () => {
         <div className="relative z-5" style={{ backgroundColor: "#1c618c", width: "100vw" }}>
 
           {/* ---- TOP VISITS ---- */}
-          <div id="homePageTopVisits" >
-            <div
-              style={{
-                display: "flex", flexWrap: "wrap", flexDirection: "row",
-                justifyContent: "space-between", alignItems: "flex-end",
-                margin: "0 5vw", width: "90vw",
-                color: "#fffbf4", fontFamily: '"Roboto Mono", monospace', fontSize: "1.5vw",
-              }}
-            >
-              {/* Station Info */}
+          <div id="homePageTopVisits">
+            <div style={{ display: "flex", flexWrap: "wrap", flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", margin: "0 5vw", width: "90vw", color: "#fffbf4", fontFamily: '"Roboto Mono", monospace', fontSize: "1.5vw" }}>
               <div>
                 <div style={{ display: "flex", flexWrap: "nowrap", alignItems: "center", fontSize: "2vw", height: "6vw" }}>
                   <img src={petronLogo} alt="Petron" style={{ height: "6vw" }} />
                   <p>Reg Trading Rizal Avenue - Malabon Street, Sta. Cruz, Manila</p>
                 </div>
 
-                {/* Gas Prices */}
-                <div
-                  style={{
-                    width: "35vw", padding: "1vw", borderRadius: "1vw",
-                    backgroundColor: "#fffbf4", color: "#4592d6", fontWeight: 700,
-                  }}
-                >
-                  {[
-                    "Blaze 100 Euro 6 (Gasoline)",
-                    "XCS Euro 4 (Gasoline)",
-                    "Max Euro 4 (Diesel)",
-                    "Xtra Advance Euro 4 (Gasoline)",
-                    "Turbo (Diesel)",
-                  ].map((name, i) => (
-                    <div key={i}>
-                      <div>{name}</div>
-                      <GasPriceDigits digits="123.45" />
-                    </div>
-                  ))}
-                </div>
+                <GasPriceBoard 
+                  gasData={[
+                    { fuelDesc: "Blaze 100 Euro 6 (Gasoline)", fuelPrice: "123.45" },
+                    { fuelDesc: "XCS Euro 4 (Gasoline)", fuelPrice: "123.45" },
+                    { fuelDesc: "Max Euro 4 (Diesel)", fuelPrice: "123.45" },
+                    { fuelDesc: "Xtra Advance Euro 4 (Gasoline)", fuelPrice: "123.45" },
+                    { fuelDesc: "Turbo (Diesel)", fuelPrice: "123.45" },
+                  ]} 
+                />
               </div>
 
               {/* Station Images */}
@@ -675,92 +467,44 @@ Nearest: () => {
             </div>
 
             <div className="m-20" style={{ marginTop: "1vw" }}>
-              <p
-                style={{
-                  width: "100vw", color: "#fffbf4", textAlign: "center",
-                  fontWeight: 700, fontFamily: '"Roboto Mono", monospace', fontSize: "2vw",
-                }}
-              >
+              <p style={{ width: "100vw", color: "#fffbf4", textAlign: "center", fontWeight: 700, fontFamily: '"Roboto Mono", monospace', fontSize: "2vw" }}>
                 <u>Explore More Top Lowest Price Gas Station Near You</u>
               </p>
             </div>
           </div>
 
           {/* ---- MAP NEAREST ---- */}
-          <div
-            style={{
-              color: "#1c618c", backgroundColor: "#fffbf4",
-              fontFamily: '"Roboto Mono", monospace',
-              display: "flex", alignItems: "center", justifyContent: "flex-start",
-              flexDirection: "column",
-            }}
-          >
-            <div
-              id="homePageMapNearestTitleHolder"
-              style={{ fontWeight: 700, fontSize: "5vw", width: "50vw", position: "relative" }}
-            >
+          <div style={{ color: "#1c618c", backgroundColor: "#fffbf4", fontFamily: '"Roboto Mono", monospace', display: "flex", alignItems: "center", justifyContent: "flex-start", flexDirection: "column" }}>
+            <div id="homePageMapNearestTitleHolder" style={{ fontWeight: 700, fontSize: "5vw", width: "50vw", position: "relative" }}>
               <p style={{ padding: "1vw", width: "30vw" }}>EXPLORE YOUR</p>
               {!locationGranted && (
-                <p
-                  onClick={handleGetLocation}
-                  style={{
-                    position: "absolute", zIndex: 1,
-                    transform: "translate(15vw, -8vw)",
-                    fontSize: "2vw", cursor: "pointer",
-                  }}
-                >
+                <p onClick={handleGetLocation} style={{ position: "absolute", zIndex: 1, transform: "translate(15vw, -8vw)", fontSize: "2vw", cursor: "pointer" }}>
                   <u>Share your location and get started</u>
                 </p>
               )}
-              <p
-                style={{
-                  padding: "1vw",
-                  width: locationGranted ? "100%" : "30vw",
-                  position: locationGranted ? "relative" : "absolute",
-                  color: locationGranted ? "#1c618c" : "#fffbf4",
-                  zIndex: 1,
-                }}
-              >
+              <p style={{ padding: "1vw", width: locationGranted ? "100%" : "30vw", position: locationGranted ? "relative" : "absolute", color: locationGranted ? "#1c618c" : "#fffbf4", zIndex: 1 }}>
                 NEAREST STATIONS
               </p>
             </div>
 
-            <div
-              style={{
-                width: "50vw", height: "30vw", borderRadius: "1vw",
-                border: "solid #1c618c 0.5vw", overflow: "hidden",
-                filter: locationGranted ? "none" : "brightness(50%)",
-              }}
-            >
+            <div style={{ width: "50vw", height: "30vw", borderRadius: "1vw", overflow: "hidden", filter: locationGranted ? "none" : "brightness(50%)" }}>
               {locationGranted && mapSrc ? (
                 <iframe
                   src={mapSrc}
-                  style={{ width: "100%", height: "100%", borderRadius: "1vw", border: "none" }}
+                  style={{ width: "100%", height: "100%", borderRadius: "1vw", border: "solid #1c618c 0.5vw" }}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   title="Nearest Map"
                 />
               ) : (
-                <div
-                  style={{
-                    width: "100%", height: "100%",
-                    backgroundColor: "#ccc", borderRadius: "1vw",
-                  }}
-                />
+                <div style={{ width: "100%", height: "100%", backgroundColor: "#ccc", borderRadius: "1vw" }} />
               )}
             </div>
           </div>
 
           {/* ---- FOOTER ---- */}
-          <div
-            style={{
-              width: "100vw", height: "20vw", backgroundColor: "#fffbf4",
-              fontSize: "1vw", fontFamily: '"Roboto Mono", monospace',
-              color: "#1c618c", display: "flex", flexWrap: "wrap",
-              alignItems: "center", justifyContent: "space-around",
-            }}
-          >
+          <div style={{ width: "100vw", height: "20vw", backgroundColor: "#fffbf4", fontSize: "1vw", fontFamily: '"Roboto Mono", monospace', color: "#1c618c", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-around" }}>
             <div>
               <img src={philUpLogo} alt="Phil Up" style={{ width: "12.5vw", height: "12.5vw", margin: "2vw" }} />
             </div>
@@ -784,11 +528,9 @@ Nearest: () => {
                 <FaSquareXTwitter />
               </div>
               <p>
-                <a href="#" style={{ color: "#1c618c" }}>Terms &amp; Conditions</a>
-                {" - "}
-                <a href="#" style={{ color: "#1c618c" }}>Privacy Policy</a>
+                <a href="#" style={{ color: "#1c618c" }}>Terms & Conditions</a>{" - "}<a href="#" style={{ color: "#1c618c" }}>Privacy Policy</a>
               </p>
-              <p>2025 (c) PhilUp Philippines, All Rights Reserved</p>
+              <p>2026 (c) PhilUp Philippines, All Rights Reserved</p>
             </div>
           </div>
 

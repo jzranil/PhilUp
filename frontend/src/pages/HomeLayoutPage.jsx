@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import axios from "axios";
 import { useNavigate, Outlet } from "react-router-dom";
 import { FaBars, FaBell, FaSearch, FaUserCircle } from "react-icons/fa";
 import BurgerDropdown from "../components/BurgerDropdown";
+import HomeSearchPanel from "../components/HomeSearchPanel";
 import philUpLogo from "../assets/Phil Up 2.png";
 import wave1 from "../assets/bottom wave 1.png";
 import wave2 from "../assets/bottom wave 2.png";
@@ -9,108 +11,179 @@ import wave3 from "../assets/bottom wave 3.png";
 import wave4 from "../assets/bottom wave 4.png";
 import { getSessionUser, logoutSession } from "../utils/session";
 
-// Mock data to prevent crash in search panel
+const getLogoUrl = (brandName) => {
+  if (!brandName) return ""; 
+  const fileName = brandName.replace(/\s+/g, ""); 
+  return `/src/assets/brand-images/${fileName}Logo.png`;
+};
+
 const MOCK_NEAREST = [];
 const MOCK_TOP_VISITS = [];
 const filteredStations = [];
 
 export default function HomeLayoutPage() {
-  // 1. ALL HOOKS AND STATE MUST BE INSIDE THE COMPONENT
+  const [locations, setLocations] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
   const user = getSessionUser();
   const isLoggedIn = !!user;
 
+  const [myLat, setMyLat] = useState(null);
+  const [myLng, setMyLng] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [locationGranted, setLocationGranted] = useState(false);
   const [activeSearchTab, setActiveSearchTab] = useState("results");
   const [mapSrc, setMapSrc] = useState("");
   const [navZ] = useState(300);
 
   // Redirect if not logged in
   useEffect(() => {
+async function fetchData() {
+      try {
+        setLoading(true);
+        const [responseLocations, responseBrands] = await Promise.all([
+          axios.get("http://localhost:9000/api/station-locations/coverage"),
+          axios.get("http://localhost:9000/api/brands/"),
+        ]);
+        setLocations(responseLocations.data);
+        setBrands(responseBrands.data);
+      } catch (error) {
+        console.error("Failed to fetch data", error);
+      } finally {
+        setTimeout(() => setLoading(false), 1000);
+      }
+    }
+    fetchData();
+
     if (!isLoggedIn) {
       navigate("/login");
     }
   }, [isLoggedIn, navigate]);
 
-  // Helper functions
-  const openSearch = (tab) => {
-    setActiveSearchTab(tab);
-    setSearchOpen(true);
-    setMenuOpen(false);
-    setSettingsOpen(false);
-    document.body.style.overflowY = "hidden";
-  };
-
-  const closeSearch = () => {
-    setSearchOpen(false);
-    document.body.style.overflowY = "scroll";
-  };
-
-  const toggleMenu = () => {
-    setMenuOpen((v) => !v);
-    setSettingsOpen(false);
-    setSearchOpen(false);
-    document.body.style.overflowY = "scroll";
-  };
-
-  const toggleSettings = () => {
-    setSettingsOpen((v) => !v);
-    setMenuOpen(false);
-    setSearchOpen(false);
-    document.body.style.overflowY = "scroll";
-  };
-
-  const handleSearchIcon = () => {
-    if (searchOpen) closeSearch();
-    else openSearch("results");
-  };
-
-  const goToLocations = () => {
-    setMenuOpen(false);
-    setSettingsOpen(false);
-    setSearchOpen(false);
-    document.body.style.overflowY = "scroll";
-    navigate("/locations");
-  };
-
-  const handleLogout = () => {
-    logoutSession();
-    navigate("/login");
-  };
-
-  // Burger menu actions
-  const burgerActions = {
-    "Top Lowest": () => {
-      setMenuOpen(false);
-    },
-    "Most Visited": () => {
-      setMenuOpen(false);
-      openSearch("topVisits");
-    },
-    Locations: goToLocations,
-    Nearest: () => {
-      setMenuOpen(false);
-      openSearch("nearest");
-    },
-    [user?.userName]: () => {
-      setMenuOpen(false);
-      navigate("/profile");
-    },
-    "Switch as Admin": () => {
-      setMenuOpen(false);
-      if (user?.userPermissionLevel >= 50) {
-        navigate("/admin");
+  const handleGetLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            setLocationGranted(true);
+            setMapSrc(
+              `https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d13758.385273920467!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sgas%20station!5e0!3m2!1sen!2sph!4v1746668755734!5m2!1sen!2sph`
+            );
+          },
+          () => {}
+        );
       }
-    },
-    "Log Out": handleLogout,
-    "Log In": () => {
+    };
+  
+    const getHaversineDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+  
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+  
+    const topThreeNearest = useMemo(() => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            setMyLat(latitude);
+            setMyLng(longitude);
+          },
+          () => {}
+        );
+      }
+      
+      if (!myLat || !myLng) return [];
+  
+      return locations
+        .map((location) => {
+          const brand = brands.find((b) => b._id === location.brandID);
+          const distance = getHaversineDistance(
+            myLat,
+            myLng,
+            location.stationLat,
+            location.stationLong
+          );
+          return { ...location, distance, brandLogo: getLogoUrl(brand?.brandDesc) };
+        })
+        .sort((a, b) => a.distance - b.distance);
+        
+    }, [myLat, myLng, locations, brands]);
+  
+    useEffect(() => { handleGetLocation(); }, []);
+  
+    const openSearch = (tab) => {
+      setActiveSearchTab(tab);
+      setSearchOpen(true);
       setMenuOpen(false);
-      navigate("/login");
-    },
-  };
+      setSettingsOpen(false);
+      document.body.style.overflowY = "hidden";
+    };
+  
+    const closeSearch = () => {
+      setSearchOpen(false);
+      document.body.style.overflowY = "scroll";
+    };
+  
+    const toggleMenu = () => {
+      setMenuOpen((v) => !v);
+      setSettingsOpen(false);
+      setSearchOpen(false);
+      document.body.style.overflowY = "scroll";
+    };
+  
+    const toggleSettings = () => {
+      setSettingsOpen((v) => !v);
+      setMenuOpen(false);
+      setSearchOpen(false);
+      document.body.style.overflowY = "scroll";
+    };
+  
+    const handleSearchIcon = () => {
+      if (searchOpen) closeSearch();
+      else openSearch("results");
+    };
+  
+    const goToLocations = () => {
+      setMenuOpen(false);
+      setSettingsOpen(false);
+      setSearchOpen(false);
+      document.body.style.overflowY = "scroll";
+      navigate("/locations");
+    };
+  
+    const burgerActions = {
+      "Top Lowest": () => { setMenuOpen(false); },
+      "Most Visited": () => { setMenuOpen(false); openSearch("topVisits"); },
+      Locations: goToLocations,
+      Nearest: () => { setMenuOpen(false); openSearch("nearest"); },
+      [user?.userName]: () => { setMenuOpen(false); navigate("/profile"); },
+      "Switch as Admin": () => {
+        setMenuOpen(false);
+        if(user?.userPermissionLevel >= 50){ navigate("/admin"); }
+      },
+      "Log Out": () => { setMenuOpen(false); logoutSession(); navigate("/login"); },
+      "Log In": () => { setMenuOpen(false); navigate("/login"); }
+    };
+  
+    const filteredStations = topThreeNearest.filter((s) =>
+      s.stationAddress?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   function StationCard({ brandLogo, stationAdd, onSelect }) {
     return (
@@ -206,6 +279,35 @@ export default function HomeLayoutPage() {
           border: 0.25vw solid #1c618c;
           display: block;
         }
+
+        @keyframes bgwave1 {
+        0%{transform: translate(5vw, 5vw)}
+        30%{transform: translate(15vw, 5vw)}
+        80%{transform: translate(10vw, 5vw)}
+        100%{transform: translate(5vw, 5vw)}
+        }
+
+        @keyframes bgwave2 {
+        0%{transform: translate(0vw, 0vw)}
+        10%{transform: translate(-3vw, 0vw)}
+        60%{transform: translate(-7vw, 0vw)}
+        100%{transform: translate(0vw, 0vw)}
+        }
+
+        @keyframes bgwave3 {
+        0%{transform: translate(10vw, 2vw)}
+        20%{transform: translate(7vw, 2vw)}
+        70%{transform: translate(3vw, 2vw)}
+        100%{transform: translate(10vw, 2vw)}
+        }
+
+        @keyframes bgwave4 {
+        0%{transform: translate(-5vw, 1vw)}
+        40%{transform: translate(0vw, 1vw)}
+        90%{transform: translate(-2vw, 1vw)}
+        100%{transform: translate(-5vw, 1vw)}
+        }
+
 
         @media (max-width: 900px) {
           .home-search-panel {
@@ -364,68 +466,18 @@ export default function HomeLayoutPage() {
           </div>
         </div>
 
-        {/* Hidden Search Panel */}
-        {searchOpen && (
-          <div className="home-search-panel">
-            <div className="home-search-grid">
-              {/* Left Panel */}
-              <div className="home-search-left">
-                <section className="home-search-section">
-                  <h1 className="home-search-title">Results</h1>
-                  {searchQuery ? (
-                    filteredStations.length > 0 ? (
-                      filteredStations.map((s) => (
-                        <StationCard key={s.fuelLocID} brandLogo={s.brandLogo} stationAdd={s.stationAdd} onSelect={() => {}} />
-                      ))
-                    ) : (
-                      <p className="home-search-empty">No stations match your search.</p>
-                    )
-                  ) : (
-                    <p className="home-search-empty">Search for a station to show matching results.</p>
-                  )}
-                </section>
-
-                <section className="home-search-section">
-                  <h1 className="home-search-title">Stations Nearby</h1>
-                  {MOCK_NEAREST.map((s) => (
-                    <StationCard key={s.fuelLocID} brandLogo={s.brandLogo} stationAdd={s.stationAdd} onSelect={() => {}} />
-                  ))}
-                </section>
-
-              {/* Top Visits */}
-              {activeSearchTab === "topVisits" && (
-                <section className="home-search-section">
-                  <h1 className="home-search-title">Top Visits</h1>
-                  {MOCK_TOP_VISITS.map((s) => (
-                    <StationCard key={s.fuelLocID} brandLogo={s.brandLogo} stationAdd={s.stationAdd} onSelect={() => {}} />
-                  ))}
-                </section>
-              )}
-
-              {/* Favorites */}
-              {activeSearchTab === "favorites" && (
-                <section className="home-search-section">
-                  <h1 className="home-search-title">Favorites</h1>
-                  <p className="home-search-empty">Log in to see your favorites.</p>
-                </section>
-              )}
-            </div>
-
-            {/* Right Panel — Map */}
-              <section className="home-search-right">
-                <h1 className="home-search-title">Stations Near You</h1>
-                <iframe
-                  src={mapSrc}
-                  className="home-search-map"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Search Map"
-                />
-              </section>
-            </div>
-          </div>
-        )}
+        <HomeSearchPanel
+            isOpen={searchOpen}
+            searchQuery={searchQuery}
+            filteredStations={filteredStations}
+            topThreeNearest={topThreeNearest}
+            loading={loading}
+            activeSearchTab={activeSearchTab}
+            mapSrc={mapSrc}
+            onSelectStation={(station) => {console.log("Selected station data:", station);
+                navigate(`/locations/${station._id}`);}
+            }
+            />
       </div>
 
       {/* Main Profile Content */}
@@ -444,15 +496,15 @@ export default function HomeLayoutPage() {
             position: "absolute",
             bottom: 0,
             left: 0,
-            width: "100%",
+            width: "120%",
             zIndex: 0,
             pointerEvents: "none",
           }}
         >
-          <img src={wave1} alt="" style={{ width: "140%", position: "absolute", bottom: "22vw", left: "-20%", opacity: 0.55 }} />
-          <img src={wave2} alt="" style={{ width: "120%", position: "absolute", bottom: "13vw", left: 0, opacity: 0.7 }} />
-          <img src={wave3} alt="" style={{ width: "125%", position: "absolute", bottom: "6vw", left: "-10%", opacity: 0.85 }} />
-          <img src={wave4} alt="" style={{ width: "115%", position: "absolute", bottom: 0, left: 0 }} />
+          <img src={wave1} alt="" style={{ width: "130vw", position: "absolute", bottom: "22vw", left: "-20%", animation: "bgwave1 30s infinite" }} />
+          <img src={wave2} alt="" style={{ width: "110vw", position: "absolute", bottom: "13vw", left: 0 ,animation: "bgwave2 29s infinite"}} />
+          <img src={wave3} alt="" style={{ width: "115vw", position: "absolute", bottom: "6vw", left: "-10%", animation: "bgwave3 28s infinite"}} />
+          <img src={wave4} alt="" style={{ width: "105vw", position: "absolute", bottom: 0, left: 0 , animation: "bgwave4 27s infinite"}} />
         </div>
 
         {/* Profile Content / Outlet */}
@@ -463,7 +515,7 @@ export default function HomeLayoutPage() {
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "center",
-            padding: "3vw",
+            padding: "2vw",
             gap: "4vw",
           }}
         >

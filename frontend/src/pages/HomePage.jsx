@@ -4,6 +4,8 @@ import { FaSquareXTwitter } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import BurgerDropdown from "../components/BurgerDropdown";
 import { getSessionUser, logoutSession } from "../utils/session";
+import axios from "axios";
+import LoadingScreen from "../components/LoadingScreen";
 
 // Asset imports
 import philUpLogo from "../assets/Phil Up 2.png";
@@ -82,6 +84,7 @@ const StationCard = ({ brandLogo, stationAdd, onSelect }) => (
 export default function HomePage() {
   const [locations, setLocations] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
@@ -104,6 +107,24 @@ export default function HomePage() {
 
   // Scroll wave animation
   useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        const [responseLocations, responseBrands] = await Promise.all([
+          axios.get("http://localhost:9000/api/station-locations/coverage"),
+          axios.get("http://localhost:9000/api/brands/"),
+        ]);
+        setLocations(responseLocations.data);
+        setBrands(responseBrands.data);
+      } catch (error) {
+        console.error("Failed to fetch data", error);
+      } finally {
+        // Add a minimum loading time for smooth UX
+        setTimeout(() => setLoading(false), 1000);
+      }
+    }
+    fetchData();
+
     const handleScroll = () => {
       const scrollTop = document.documentElement.scrollTop;
       if (wave1Ref.current) wave1Ref.current.style.transform = `translate(${scrollTop * 0.04 - 40}vw, -24vw)`;
@@ -117,6 +138,7 @@ export default function HomePage() {
         setSettingsOpen(false);
       }
     };
+    
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -221,6 +243,10 @@ Nearest: () => {
   const filteredStations = MOCK_NEAREST.filter((s) =>
     s.stationAdd.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <>
@@ -512,18 +538,34 @@ Nearest: () => {
 
                 <section className="home-search-section">
                   <h1 className="home-search-title">Stations Nearby</h1>
-                  {MOCK_NEAREST.map((s) => (
-                    <StationCard key={s.fuelLocID} brandLogo={s.brandLogo} stationAdd={s.stationAdd} onSelect={() => {}} />
-                  ))}
+                  {loading ? (
+                    <>
+                      <SkeletonCard />
+                      <SkeletonCard />
+                      <SkeletonCard />
+                    </>
+                  ) : (
+                    MOCK_NEAREST.map((s) => (
+                      <StationCard key={s.fuelLocID} {...s} onSelect={() => {}} />
+                    ))
+                  )}
                 </section>
 
               {/* Top Visits */}
               {activeSearchTab === "topVisits" && (
                 <section className="home-search-section">
                   <h1 className="home-search-title">Top Visits</h1>
-                  {MOCK_TOP_VISITS.map((s) => (
-                    <StationCard key={s.fuelLocID} brandLogo={s.brandLogo} stationAdd={s.stationAdd} onSelect={() => {}} />
-                  ))}
+                  {loading ? (
+                    <>
+                      <SkeletonCard />
+                      <SkeletonCard />
+                      <SkeletonCard />
+                    </>
+                  ) : (
+                    MOCK_NEAREST.map((s) => (
+                      <StationCard key={s.fuelLocID} {...s} onSelect={() => {}} />
+                    ))
+                  )}
                 </section>
               )}
 

@@ -20,7 +20,7 @@ export const createBrand = async (req, res) => {
 export const getAllBrands = async (req, res) => {
   try {
     const brandData = await Brand.find();
-    if (!brandData || brandData.length === 0) {
+    if (!brandData) {
       return res.status(404).json({ message: "Brand data not found" }); 
     }
     res.status(200).json(brandData);

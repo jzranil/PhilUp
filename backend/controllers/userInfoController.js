@@ -81,7 +81,7 @@ export const createUserInfo = async (req, res) => {
 export const getAllUserInfo = async (req, res) => {
   try {
     const userData = await UserInfo.find();
-    if (!userData || userData.length === 0) {
+    if (!userData) {
       return res.status(404).json({ message: "User data not found" }); 
     }
     res.status(200).json(userData);

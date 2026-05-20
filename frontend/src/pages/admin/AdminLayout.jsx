@@ -27,7 +27,6 @@ const tableLinks = [
   { label: "Admins", path: "/admin/admins" },
   { label: "Registered Locations", path: "/admin/registered-locations" },
   { label: "Gas Prices", path: "/admin/gas-prices" },
-  { label: "Approvals", path: "/admin/approvals" },
   { label: "Admin Log", path: "/admin/admin-log" },
   { label: "User Log", path: "/admin/user-log" },
 ];
@@ -203,9 +202,6 @@ useEffect(() => {
               width: "25vw",
             }}
           >
-            <button className="nav-btn" aria-label="Notifications">
-              <Bell size="1.8vw" />
-            </button>
             <button className="nav-btn" aria-label="Admin account">
               <User size="2.1vw" />
             </button>
@@ -219,6 +215,7 @@ useEffect(() => {
                 width: "25vw",
                 height: 0,
                 border: "0.22vw solid #1c618c",
+                borderRadius: "1vw",
                 margin: "0.85vw 1vw",
               }}
             />
@@ -228,6 +225,7 @@ useEffect(() => {
                 width: "25vw",
                 height: 0,
                 border: "0.22vw solid #1c618c",
+                borderRadius: "1vw",
                 margin: "0.85vw 1vw",
               }}
             />
@@ -238,6 +236,7 @@ useEffect(() => {
                 width: "20vw",
                 height: 0,
                 border: "0.22vw solid #1c618c",
+                borderRadius: "1vw",
                 margin: "0.5vw 1vw",
               }}
             />
@@ -248,6 +247,7 @@ useEffect(() => {
                 width: "20vw",
                 height: 0,
                 border: "0.22vw solid #1c618c",
+                borderRadius: "1vw",
                 margin: "0.5vw 1vw",
               }}
             />

@@ -191,7 +191,7 @@ function Navbar({ navigate, menuOpen, setMenuOpen, settingsOpen, setSettingsOpen
         ? [
             getSessionUser()?.userName,
 
-            ...(getSessionUser()?.userPermissionLevel > 0
+            ...(getSessionUser()?.userPermissionLevel >= 50
               ? ["Switch as Admin"]
               : []),
 
@@ -253,7 +253,7 @@ navigate("/profile");
 {getSessionUser()?.userName}
 </p>
 
-{getSessionUser()?.userPermissionLevel>0 && (
+{getSessionUser()?.userPermissionLevel >= 50 && (
 <p
 style={{cursor:"pointer"}}
 onClick={()=>{

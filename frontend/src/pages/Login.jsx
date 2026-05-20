@@ -5,33 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 const LOGO_SRC = logo;
 
-const GoogleIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 48 48">
-    <path
-      fill="#EA4335"
-      d="M24 9.5c3.14 0 5.95 1.08 8.17 2.85l6.1-6.1C34.39 3.09 29.47 1 24 1 14.82 1 7.01 6.48 3.69 14.26l7.12 5.53C12.5 13.59 17.77 9.5 24 9.5z"
-    />
-    <path
-      fill="#4285F4"
-      d="M46.52 24.5c0-1.64-.15-3.22-.43-4.74H24v8.98h12.67c-.55 2.93-2.2 5.41-4.68 7.08l7.2 5.59C43.47 37.45 46.52 31.43 46.52 24.5z"
-    />
-    <path
-      fill="#FBBC05"
-      d="M10.81 28.21A14.52 14.52 0 0 1 9.5 24c0-1.46.25-2.87.69-4.21L3.07 14.26A23.93 23.93 0 0 0 .5 24c0 3.87.93 7.53 2.57 10.74l7.74-6.53z"
-    />
-    <path
-      fill="#34A853"
-      d="M24 47c5.47 0 10.07-1.81 13.43-4.93l-7.2-5.59c-1.89 1.27-4.3 2.02-6.23 2.02-6.23 0-11.5-4.09-13.19-9.79l-7.74 6.53C7.01 41.52 14.82 47 24 47z"
-    />
-  </svg>
-);
-
-const FacebookIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
-    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
-  </svg>
-);
-
 const PhilUpSVGLogo = () => (
   <svg
     width="200"
@@ -392,17 +365,27 @@ export default function PhilUpApp() {
 const API_URL = "http://localhost:9000/api";
 
 const handleLogin = async () => {
+
+  if (!username || !password) {
+  alert("Please enter username and password");
+  return;
+}
+
   try {
     const res = await axios.post(`${API_URL}/login`, {
-      userName: username,
-      userPassword: password,
-    });
+  userName: username,
+  userPassword: password,
+});
 
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
+console.log("LOGIN USER:", res.data.user);
 
-    if (res.data.user.userPermissionLevel > 0) {
-      navigate("/admin");
+localStorage.setItem("token", res.data.token);
+localStorage.setItem("user", JSON.stringify(res.data.user));
+
+navigate("/profile");
+
+if (res.data.user.userPermissionLevel >= 50) {
+        navigate("/admin");
     } else {
       navigate("/");
     }
@@ -412,6 +395,61 @@ const handleLogin = async () => {
 };
 
 const handleSignup = async () => {
+  const nameRegex = /^[A-Za-z\s]+$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const contactRegex = /^09\d{9}$/;
+const today = new Date().toISOString().split("T")[0];
+
+if (!firstName || !lastName || !email || !contact || !regPass || !regPass2) {
+  alert("Please fill all required fields.");
+  return;
+}
+
+if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
+  alert("Names should not contain numbers or special characters.");
+  return;
+}
+
+if (!emailRegex.test(email)) {
+  alert("Please enter a valid email address.");
+  return;
+}
+
+if (firstName.length > 30 || lastName.length > 30) {
+  alert("First name and last name must be 30 characters only.");
+  return;
+}
+
+if (email.length > 50) {
+  alert("Email must be 50 characters only.");
+  return;
+}
+
+if (contact.length > 11) {
+  alert("Contact number must be 11 digits.");
+  return;
+}
+
+if (!contactRegex.test(contact)) {
+  alert("Contact number must be 11 digits and start with 09.");
+  return;
+}
+
+const birthDate = new Date(birthday);
+
+const minBirthDate = new Date();
+minBirthDate.setFullYear(minBirthDate.getFullYear() - 13);
+
+if (birthDate > minBirthDate) {
+  alert("You must be at least 13 years old.");
+  return;
+}
+
+if (regPass.length < 6) {
+  alert("Password must be at least 6 characters.");
+  return;
+}
+
   if (regPass !== regPass2) {
     alert("Passwords do not match.");
     return;
@@ -430,6 +468,19 @@ const handleSignup = async () => {
     });
 
     alert("Account created successfully!");
+
+    setUsername(email);
+setPassword(regPass);
+
+    setFirstName("");
+setLastName("");
+setBirthday("");
+setAddress("");
+setEmail("");
+setContact("");
+setRegPass("");
+setRegPass2("");
+
     goToLogin();
   } catch (error) {
     alert(error.response?.data?.message || "Signup failed.");
@@ -597,49 +648,6 @@ const handleSignup = async () => {
                 : "2px solid transparent",
             }}
           />
-
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              background: "#fff",
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-              fontSize: "0.85rem",
-              color: "#444",
-              cursor: "pointer",
-              fontWeight: "500",
-              marginBottom: "10px",
-              width: "245px",
-              height: "46px",
-              padding: "0 14px",
-            }}
-          >
-            <GoogleIcon /> Sign in with Google
-          </button>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              background: "#1877F2",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "0.85rem",
-              color: "#fff",
-              cursor: "pointer",
-              fontWeight: "600",
-              marginBottom: "24px",
-              width: "245px",
-              height: "46px",
-              padding: "0 14px",
-            }}
-          >
-            <FacebookIcon /> Continue with Facebook
-          </button>
 
           <button
   onClick={handleLogin}
@@ -816,36 +824,46 @@ const handleSignup = async () => {
               <div>
                 <label style={regLabelStyle}>First Name</label>
                 <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  onFocus={() => setFocusedReg("fn")}
-                  onBlur={() => setFocusedReg(null)}
-                  style={{
-                    ...inputBase,
-                    border:
-                      focusedReg === "fn"
-                        ? "2px solid #f5a623"
-                        : "2px solid transparent",
-                  }}
-                />
+  type="text"
+  value={firstName}
+  maxLength={30}
+  pattern="[A-Za-z\s]+"
+  onChange={(e) => {
+    const value = e.target.value.replace(/[^A-Za-z\s]/g, "");
+    setFirstName(value.slice(0, 30));
+  }}
+  onFocus={() => setFocusedReg("fn")}
+  onBlur={() => setFocusedReg(null)}
+  style={{
+    ...inputBase,
+    border:
+      focusedReg === "fn"
+        ? "2px solid #f5a623"
+        : "2px solid transparent",
+  }}
+/>
               </div>
               <div>
                 <label style={regLabelStyle}>Last Name</label>
                 <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  onFocus={() => setFocusedReg("ln")}
-                  onBlur={() => setFocusedReg(null)}
-                  style={{
-                    ...inputBase,
-                    border:
-                      focusedReg === "ln"
-                        ? "2px solid #f5a623"
-                        : "2px solid transparent",
-                  }}
-                />
+  type="text"
+  value={lastName}
+  maxLength={30}
+  pattern="[A-Za-z\s]+"
+  onChange={(e) => {
+    const value = e.target.value.replace(/[^A-Za-z\s]/g, "");
+    setLastName(value.slice(0, 30));
+  }}
+  onFocus={() => setFocusedReg("ln")}
+  onBlur={() => setFocusedReg(null)}
+  style={{
+    ...inputBase,
+    border:
+      focusedReg === "ln"
+        ? "2px solid #f5a623"
+        : "2px solid transparent",
+  }}
+/>
               </div>
             </div>
 
@@ -853,9 +871,14 @@ const handleSignup = async () => {
             <div style={{ marginBottom: "14px" }}>
               <label style={regLabelStyle}>Birthday</label>
               <input
-                type="date"
-                value={birthday}
-                onChange={(e) => setBirthday(e.target.value)}
+  type="date"
+  value={birthday}
+  max={new Date(
+    new Date().setFullYear(
+      new Date().getFullYear() - 13
+    )
+  ).toISOString().split("T")[0]}
+  onChange={(e) => setBirthday(e.target.value)}
                 onFocus={() => setFocusedReg("bd")}
                 onBlur={() => setFocusedReg(null)}
                 style={{
@@ -899,26 +922,36 @@ const handleSignup = async () => {
               <div>
                 <label style={regLabelStyle}>Email Address</label>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onFocus={() => setFocusedReg("em")}
-                  onBlur={() => setFocusedReg(null)}
-                  style={{
-                    ...inputBase,
-                    border:
-                      focusedReg === "em"
-                        ? "2px solid #f5a623"
-                        : "2px solid transparent",
-                  }}
-                />
+  type="email"
+  value={email}
+  maxLength={50}
+  onChange={(e) => {
+    setEmail(e.target.value.slice(0, 50));
+  }}
+  onFocus={() => setFocusedReg("em")}
+  onBlur={() => setFocusedReg(null)}
+  style={{
+    ...inputBase,
+    border:
+      focusedReg === "em"
+        ? "2px solid #f5a623"
+        : "2px solid transparent",
+  }}
+/>
               </div>
               <div>
                 <label style={regLabelStyle}>Contact Number</label>
                 <input
-                  type="tel"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
+  type="tel"
+  value={contact}
+  maxLength={11}
+  onChange={(e) => {
+    const value = e.target.value.replace(/\D/g, "");
+
+    if (value.length <= 11) {
+      setContact(value);
+    }
+  }}
                   onFocus={() => setFocusedReg("ct")}
                   onBlur={() => setFocusedReg(null)}
                   style={{

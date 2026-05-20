@@ -17,14 +17,20 @@ import { isLoggedIn } from "../utils/session";
 export default function UploadLocationPage() {
   const navigate = useNavigate();
 
-  useEffect(() => {
-  if (!isLoggedIn()) {
-    navigate("/login");
-  }
-}, [navigate]);
-
+  const loggedIn = isLoggedIn();
+  
   const [brand, setBrand] = useState("");
   const [address, setAddress] = useState("");
+
+useEffect(() => {
+  if (!loggedIn) {
+    navigate("/login");
+  }
+}, [loggedIn, navigate]);
+
+if (!loggedIn) {
+  return null;
+}
 
   return (
     <main
@@ -69,8 +75,12 @@ export default function UploadLocationPage() {
           }}
         >
           <FaBell size={30} />
-          <FaUserCircle size={35} />
-        </div>
+<FaUserCircle
+  size={35}
+  style={{ cursor: "pointer" }}
+  onClick={() => navigate("/profile")}
+/>    
+    </div>
       </div>
 
       {/* CONTENT */}

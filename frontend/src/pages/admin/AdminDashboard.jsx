@@ -321,9 +321,9 @@ export default function AdminDashboard() {
 useEffect(() => {
   const user = getSessionUser();
 
-  if (!user || user.userPermissionLevel <= 0) {
-    navigate("/");
-  }
+  if (!user || user.userPermissionLevel < 50) {
+  navigate("/");
+}
 }, [navigate]);
 
   return (
@@ -414,16 +414,21 @@ useEffect(() => {
               position: "relative",
             }}
           >
-            <a
-              href="/"
-              style={{ position: "absolute", top: "0.5vw", zIndex: 301 }}
-            >
+          <div
+  onClick={() => navigate("/")}
+  style={{
+    position: "absolute",
+    top: "0.5vw",
+    zIndex: 301,
+    cursor: "pointer"
+  }}
+>
               <img
                 src={PhilUpLogo}
                 alt="Phil UP Logo"
                 style={{ width: "6vw", height: "auto", objectFit: "contain" }}
               />
-            </a>
+            </div>
           </div>
 
           {/* Right */}

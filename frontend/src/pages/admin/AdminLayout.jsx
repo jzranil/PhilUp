@@ -94,9 +94,9 @@ export default function AdminLayout({
 useEffect(() => {
   const user = getSessionUser();
 
-  if (!user || user.userPermissionLevel <= 0) {
-    navigate("/");
-  }
+  if (!user || user.userPermissionLevel < 50) {
+  navigate("/");
+}
 }, [navigate]);
 
   return (

@@ -182,10 +182,99 @@ export default function AdminRequestReviewPage({ type }) {
     );
   }, [pageData.rows, searchQuery]);
 
-  const updateStatus = (id, status) => {
-    setEvaluatedStatuses((prev) => ({ ...prev, [id]: status }));
-    // Optional: Add axios.post / axios.patch here to sync status updates to backend database
-  };
+  const updateStatus = async (id, action) => {
+  try {
+    const isPriceType = type === "price" || !type;
+
+    if (action === "Declined") {
+      if (isPriceType) {
+        await axios.delete(`http://localhost:9000/api/fuel-price-requests/${id}`);
+        setPriceRequest((prev) => prev.filter((req) => req._id !== id));
+      } else {
+        await axios.delete(`http://localhost:9000/api/station-location-requests/${id}`);
+        setLocationRequest((prev) => prev.filter((req) => req._id !== id));
+      }
+      return;
+    }
+
+    if (isPriceType) {
+      const newRequest = priceRequest.find((req) => req._id === id);
+
+      const oldApproved = priceRequest.find(
+        (req) =>
+          req._id !== id &&
+          req.stationLocID === newRequest.stationLocID &&
+          req.fuelTypeID === newRequest.fuelTypeID &&
+          req.isAccepted === 1
+      );
+
+      if (oldApproved) {
+        await axios.put(`http://localhost:9000/api/fuel-price-requests/${oldApproved._id}`, {
+          isAccepted: 0,
+        });
+      }
+
+      await axios.put(`http://localhost:9000/api/fuel-price-requests/${id}`, {
+        isAccepted: 1,
+        forEval: 0,
+      });
+
+      setPriceRequest((prev) =>
+        prev.map((req) => {
+          if (oldApproved && req._id === oldApproved._id) {
+            return { ...req, isAccepted: 0 };
+          }
+
+          if (req._id === id) {
+            return { ...req, isAccepted: 1, forEval: 0 };
+          }
+
+          return req;
+        })
+      );
+
+      return;
+    }
+
+    const newRequest = locationRequest.find((req) => req._id === id);
+
+    const oldApproved = locationRequest.find(
+      (req) =>
+        req._id !== id &&
+        Number(req.stationLong) === Number(newRequest.stationLong) &&
+        Number(req.stationLat) === Number(newRequest.stationLat) &&
+        req.isAccepted === 1
+    );
+
+    if (oldApproved) {
+      await axios.put(`http://localhost:9000/api/station-location-requests/${oldApproved._id}`, {
+        isAccepted: 0,
+      });
+    }
+
+    await axios.put(`http://localhost:9000/api/station-location-requests/${id}`, {
+      isAccepted: 1,
+      forEval: 0,
+    });
+
+    setLocationRequest((prev) =>
+      prev.map((req) => {
+        if (oldApproved && req._id === oldApproved._id) {
+          return { ...req, isAccepted: 0 };
+        }
+
+        if (req._id === id) {
+          return { ...req, isAccepted: 1, forEval: 0 };
+        }
+
+        return req;
+      })
+    );
+  } catch (error) {
+    console.error("Request action failed:", error);
+    alert("Action failed. Please try again.");
+  }
+};
 
   if (loading) {
     return (

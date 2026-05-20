@@ -133,3 +133,52 @@ export const deleteStationLocation = async (req, res) => {
     res.status(500).json({ errorMessage: error.message });
   }
 };
+
+export const updateStationLocationRequest = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const updatedData = await StationLocation.findByIdAndUpdate(
+      id,
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!updatedData) {
+      return res.status(404).json({
+        message: "Station location request not found",
+      });
+    }
+
+    res.status(200).json(updatedData);
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: error.message,
+    });
+  }
+};
+
+export const deleteStationLocationRequest = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const deletedData = await StationLocation.findByIdAndDelete(id);
+
+    if (!deletedData) {
+      return res.status(404).json({
+        message: "Station location request not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Station location request deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      errorMessage: error.message,
+    });
+  }
+};

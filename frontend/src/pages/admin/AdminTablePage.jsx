@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import axios from "axios";
 import AdminLayout from "./AdminLayout";
+import { getSessionUser } from "../../utils/session";
 
 const getLogoUrl = (brandName) => {
   // Guard clause to handle missing or undefined brand names gracefully
@@ -36,6 +37,72 @@ const cardStyle = {
   fontFamily: '"Roboto Mono", monospace',
 };
 
+const modalOverlayStyle = {
+  position: "fixed",
+  inset: 0,
+  backgroundColor: "rgba(0,0,0,0.45)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 9999,
+};
+
+const modalBoxStyle = {
+  width: "32vw",
+  backgroundColor: "#fffbf4",
+  border: "0.2vw solid #1c618c",
+  borderRadius: "1vw",
+  padding: "2vw",
+  fontFamily: '"Roboto Mono", monospace',
+  boxShadow: "0 0.4vw 1.2vw rgba(0,0,0,0.25)",
+};
+
+const modalTitleStyle = {
+  color: "#1c618c",
+  fontSize: "1.5vw",
+  fontWeight: 700,
+  marginBottom: "1.2vw",
+};
+
+const modalInputStyle = {
+  width: "100%",
+  padding: "0.75vw",
+  marginBottom: "0.8vw",
+  border: "0.12vw solid #1c618c",
+  borderRadius: "0.5vw",
+  backgroundColor: "#fffbf4",
+  color: "#1c618c",
+  fontFamily: '"Roboto Mono", monospace',
+  fontWeight: 700,
+};
+
+const modalButtonRowStyle = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: "0.8vw",
+  marginTop: "1vw",
+};
+
+const modalCancelButtonStyle = {
+  padding: "0.65vw 1vw",
+  border: "0.12vw solid #1c618c",
+  borderRadius: "0.5vw",
+  backgroundColor: "transparent",
+  color: "#1c618c",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const modalSaveButtonStyle = {
+  padding: "0.65vw 1vw",
+  border: "none",
+  borderRadius: "0.5vw",
+  backgroundColor: "#1c618c",
+  color: "#fffbf4",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
 export default function AdminTablePage({ tableKey }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -47,6 +114,21 @@ export default function AdminTablePage({ tableKey }) {
   const [users, setUsers] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
   const [logs, setLogs] = useState([]);
+
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+
+  const [editForm, setEditForm] = useState({
+ userName:"",
+ userFName:"",
+ userLName:"",
+ userEmail:"",
+ userContact:"",
+ userAddress:"",
+});
+
+const [selectedRole, setSelectedRole] = useState(1);
 
   useEffect(() => {
     async function fetchData() {
@@ -93,16 +175,29 @@ export default function AdminTablePage({ tableKey }) {
       "registered-users": {
         title: "Registered Users",
         description: "Manage user accounts registered in Phil UP.",
-        columns: ["User ID", "Name", "UserName", "Email", "Contact", "Date Created", "Action"],
-        rows: users
-          .filter((user) => user.userPermissionLevel < 2)
-          .map((user) => ({
+columns: [
+ "User ID",
+ "Name",
+ "Username",
+ "Email",
+ "Contact Number",
+ "Role",
+ "Date Created",
+ "Action"
+],
+        rows: users.map((user) => ({
             id: user._id,
             name: `${user.userFName} ${user.userLName}`,
             username: user.userName,
             email: user.userEmail,
             contact: user.userContact,
-            dateCreated: user.dateCreated
+role:
+  user.userPermissionLevel === 100
+    ? "Super Admin"
+    : user.userPermissionLevel === 50
+    ? "Admin"
+    : "User",
+                dateCreated: user.dateCreated
                 ? new Date(user.dateCreated).toLocaleString("en-US", {
                     year: "numeric",
                     month: "long",
@@ -117,16 +212,41 @@ export default function AdminTablePage({ tableKey }) {
       admins: {
         title: "Admins",
         description: "Manage administrator accounts and access.",
-        columns: ["Admin ID", "Name", "Username", "Email", "Contact Number", "Role", "Action"],
+columns: [
+ "User ID",
+ "Name",
+ "Username",
+ "Email",
+ "Contact Number",
+ "Role",
+ "Date Created",
+ "Action"
+],
         rows: users
-          .map((user) => ({
-            id: user._id,
-            name: `${user.userFName} ${user.userLName}`,
-            username: user.userName,
-            email: user.userEmail,
-            contact: user.userContact,
-            role: user.userPermissionLevel >= 100 ? "Super Admin" : user.userPermissionLevel >= 2 ? "Admin" : "User",
-          }))
+  .map((user) => ({
+    id: user._id,
+    name: `${user.userFName} ${user.userLName}`,
+    username: user.userName,
+    email: user.userEmail,
+    contact: user.userContact,
+    role:
+      user.userPermissionLevel === 100
+        ? "Super Admin"
+        : user.userPermissionLevel === 50
+        ? "Admin"
+        : "User",
+
+    dateCreated: user.dateCreated
+      ? new Date(user.dateCreated).toLocaleString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : "N/A",
+  }))
           .filter((user) => user.role === "Super Admin" || user.role === "Admin"),
       },
       "registered-locations": {
@@ -188,8 +308,13 @@ export default function AdminTablePage({ tableKey }) {
             const user = users.find((u) => u._id === log.userID) || {};
             return {
               id: log._id,
-              role: user.userPermissionLevel >= 100 ? "Super Admin" : user.userPermissionLevel >= 2 ? "Admin" : "User",
-              level: log.level,
+role:
+  user.userPermissionLevel === 100
+    ? "Super Admin"
+    : user.userPermissionLevel === 50
+    ? "Admin"
+    : "User",
+                  level: log.level,
               activity: log.activity,
               traceId: log.traceID,
               timestamp: log.dateCreated
@@ -268,7 +393,7 @@ export default function AdminTablePage({ tableKey }) {
 
   const tableActionConfig = {
     "registered-users": ["promote", "edit", "delete"],
-    admins: ["promote", "demote", "edit", "delete"],
+    "admins": ["edit", "promote", "delete"],
     "registered-locations": ["remove"],
     "gas-prices": ["remove"],
     "admin-log": [],
@@ -287,22 +412,126 @@ export default function AdminTablePage({ tableKey }) {
     );
   }, [page.rows, searchQuery]);
 
-  const handleActionUpdate = (id, action) => {
-    console.log(`Performing ${action} on ID: ${id}`);
-    if(tableKey === "gas-prices" && action === "remove") {
-      // Call API to delete fuel price
-      axios.delete(`http://localhost:9000/api/fuel-prices/${id}`)
-        .then(() => {
-          // Refresh the table or update the state to reflect the deletion
-          console.log(`Fuel price deleted successfully: ${id}`);
-        })
-        .catch((error) => {
-          console.error(`Error deleting fuel price: ${error.message}`);
-        });
-    }
-      //palagay dito yung others
+  const handleActionUpdate = async (id, action) => {
+  const user = users.find((u) => u._id === id);
 
-  };
+if (
+   tableKey==="registered-users" ||
+   tableKey==="admins"
+){
+      if (action === "delete") {
+  const currentUser = getSessionUser();
+
+  // Prevent deleting yourself
+  if (user._id === currentUser?._id) {
+    alert("You cannot delete your own account.");
+    return;
+  }
+
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this user?"
+  );
+
+  if (!confirmDelete) return;
+
+  const superAdmins =
+ users.filter(
+   u=>u.userPermissionLevel===100
+ );
+
+if(
+ user.userPermissionLevel===100 &&
+ superAdmins.length===1
+){
+   alert(
+    "Cannot delete the only Super Admin"
+   );
+   return;
+}
+
+  await axios.delete(
+    `http://localhost:9000/api/users/${id}`
+  );
+
+  setUsers((prev) =>
+    prev.filter((u) => u._id !== id)
+  );
+
+  return;
+}
+
+    if (action === "edit") {
+      setSelectedUser(user);
+      setEditForm({
+ userName:user.userName||"",
+ userFName:user.userFName||"",
+ userLName:user.userLName||"",
+ userEmail:user.userEmail||"",
+ userContact:user.userContact||"",
+ userAddress:user.userAddress||"",
+});
+      setEditModalOpen(true);
+      return;
+    }
+
+    if (action === "promote") {
+      setSelectedUser(user);
+      setSelectedRole(user.userPermissionLevel || 1);
+      setRoleModalOpen(true);
+      return;
+    }
+  }
+
+  if (tableKey === "gas-prices" && action === "remove") {
+    await axios.delete(`http://localhost:9000/api/fuel-prices/${id}`);
+    setPrices((prev) => prev.filter((p) => p._id !== id));
+  }
+};
+
+const handleEditUserSave = async () => {
+  if (!selectedUser) return;
+
+  const res = await axios.put(
+    `http://localhost:9000/api/users/${selectedUser._id}`,
+    editForm
+  );
+
+  const updatedUser = res.data.user || res.data;
+
+  setUsers((prev) =>
+    prev.map((u) => (u._id === selectedUser._id ? updatedUser : u))
+  );
+
+  setEditModalOpen(false);
+  setEditForm({
+    userName: "",
+    userFName: "",
+    userLName: "",
+    userEmail: "",
+    userContact: "",
+    userAddress: "",
+  });
+  setSelectedUser(null);
+};
+
+const handleRoleSave = async () => {
+  if (!selectedUser) return;
+
+  const res = await axios.patch(
+    `http://localhost:9000/api/users/${selectedUser._id}/permissions`,
+    { userPermissionLevel: Number(selectedRole) }
+  );
+
+  const updatedUser = res.data.user || res.data;
+
+  setUsers((prev) =>
+    prev.map((u) => (u._id === selectedUser._id ? updatedUser : u))
+  );
+
+  setRoleModalOpen(false);
+  setSelectedRole(1);
+  setSelectedUser(null);
+};
 
   return (
     <AdminLayout searchQuery={searchQuery} onSearchChange={setSearchQuery}>
@@ -396,6 +625,77 @@ export default function AdminTablePage({ tableKey }) {
           )}
         </div>
       </section>
+
+{editModalOpen && selectedUser && (
+    <div style={modalOverlayStyle}>
+    <div style={modalBoxStyle}>
+      <h2 style={modalTitleStyle}>Edit User</h2>
+
+      {[
+"userName",
+"userFName",
+"userLName",
+"userEmail",
+"userContact",
+"userAddress"
+].map((field) => (
+        <input
+          key={field}
+          value={editForm[field]}
+placeholder={
+ field==="userName" ? "Username" :
+ field==="userFName" ? "First Name" :
+ field==="userLName" ? "Last Name" :
+ field==="userEmail" ? "Email" :
+ field==="userContact" ? "Contact Number" :
+ "Address"
+}
+          onChange={(e) =>
+            setEditForm({ ...editForm, [field]: e.target.value })
+          }
+          style={modalInputStyle}
+        />
+      ))}
+
+      <div style={modalButtonRowStyle}>
+        <button style={modalCancelButtonStyle} onClick={() => setEditModalOpen(false)}>
+          Cancel
+        </button>
+        <button style={modalSaveButtonStyle} onClick={handleEditUserSave}>
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{roleModalOpen && selectedUser && (
+    <div style={modalOverlayStyle}>
+    <div style={modalBoxStyle}>
+      <h2 style={modalTitleStyle}>Change User Role</h2>
+
+      <select
+        value={selectedRole}
+        onChange={(e) => setSelectedRole(e.target.value)}
+        style={modalInputStyle}
+      >
+        <option value={1}>User</option>
+        <option value={50}>Admin</option>
+        <option value={100}>Super Admin</option>
+      </select>
+
+      <div style={modalButtonRowStyle}>
+        <button style={modalCancelButtonStyle} onClick={() => setRoleModalOpen(false)}>
+          Cancel
+        </button>
+        <button style={modalSaveButtonStyle} onClick={handleRoleSave}>
+          Update Role
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </AdminLayout>
   );
 }

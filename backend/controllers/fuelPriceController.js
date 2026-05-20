@@ -200,3 +200,35 @@ export const deletePastFuelPrices = async (req, res) => {
     res.status(500).json({ errorMessage: error.message });
   }
 };
+
+export const updateFuelPriceRequest = async (req, res) => {
+  try {
+    const updated = await FuelPrice.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Fuel price request not found" });
+    }
+
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(500).json({ errorMessage: error.message });
+  }
+};
+
+export const deleteFuelPriceRequest = async (req, res) => {
+  try {
+    const deleted = await FuelPrice.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Fuel price request not found" });
+    }
+
+    res.status(200).json({ message: "Fuel price request deleted" });
+  } catch (error) {
+    res.status(500).json({ errorMessage: error.message });
+  }
+};

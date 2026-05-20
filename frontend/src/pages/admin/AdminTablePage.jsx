@@ -289,7 +289,19 @@ export default function AdminTablePage({ tableKey }) {
 
   const handleActionUpdate = (id, action) => {
     console.log(`Performing ${action} on ID: ${id}`);
-    // Handle action click here
+    if(tableKey === "gas-prices" && action === "remove") {
+      // Call API to delete fuel price
+      axios.delete(`http://localhost:9000/api/fuel-prices/${id}`)
+        .then(() => {
+          // Refresh the table or update the state to reflect the deletion
+          console.log(`Fuel price deleted successfully: ${id}`);
+        })
+        .catch((error) => {
+          console.error(`Error deleting fuel price: ${error.message}`);
+        });
+    }
+      //palagay dito yung others
+
   };
 
   return (

@@ -66,6 +66,19 @@ export const getStationLocationRequest = async (req, res) => {
   }
 };
 
+export const getStationLocationApproved = async (req, res) => {
+  try {
+    const isAccepted = 1;
+    const stationLocationApproved = await StationLocation.find({ isAccepted });     
+    if (!stationLocationApproved) {
+      return res.status(404).json({ message: "Station location approved not found" });
+    }
+    res.status(200).json(stationLocationApproved);
+  } catch (error) {
+    res.status(500).json({ errorMessage: error.message });
+  }
+};
+
 export const updateStationLocation = async (req, res) => {
   try {
     const id = req.params.id;

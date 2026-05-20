@@ -373,12 +373,16 @@ const handleLogin = async () => {
 
   try {
     const res = await axios.post(`${API_URL}/login`, {
-      userName: username,
-      userPassword: password,
-    });
+  userName: username,
+  userPassword: password,
+});
 
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
+console.log("LOGIN USER:", res.data.user);
+
+localStorage.setItem("token", res.data.token);
+localStorage.setItem("user", JSON.stringify(res.data.user));
+
+navigate("/profile");
 
 if (res.data.user.userPermissionLevel >= 50) {
         navigate("/admin");

@@ -17,6 +17,7 @@ import AdminGasPrices from "../pages/admin/AdminGasPrices";
 import AdminApprovals from "../pages/admin/AdminApprovals";
 import AdminAdminLog from "../pages/admin/AdminAdminLog";
 import AdminUserLog from "../pages/admin/AdminUserLog";
+import EditProfilePage from "../pages/EditProfilePage";
 
 const AppRoutes = () => {
   return (
@@ -26,6 +27,7 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Login />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/edit-profile" element={<EditProfilePage />} />
         <Route path="/locations" element={<LocationsPage />} />
         <Route path="/locations/:locationId" element={<LocationDetailsPage />} />
         <Route path="/upload-price" element={<UploadPricePage />} />

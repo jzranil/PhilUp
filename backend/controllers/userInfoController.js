@@ -170,7 +170,14 @@ export const loginUser = async (req, res) => {
   try {
     const { userName, userPassword } = req.body;
 
-    const user = await UserInfo.findOne({ userName });
+    const loginInput = userName?.trim();
+
+    const user = await UserInfo.findOne({
+      $or: [
+        { userName: loginInput },
+        { userEmail: loginInput.toLowerCase() }
+      ]
+    });
 
     if (!user) {
       return res.status(404).json({ message: "Account not found" });
@@ -183,26 +190,36 @@ export const loginUser = async (req, res) => {
     }
 
     const token = jwt.sign(
-      {
-        id: user._id,
-        name: user.userName,
-      },
-      process.env.JWT_SECRET || "philupsecret",
-      {
-        expiresIn: "1d",
-      }
-    );
+  {
+    id: user._id,
+    name: user.userName,
+  },
+  process.env.JWT_SECRET || "philupsecret",
+  { expiresIn: "1d" }
+);
 
-    res.status(200).json({
+console.log("BACKEND LOGIN RESPONSE:", {
+  _id: user._id,
+  userAddress: user.userAddress,
+  userContact: user.userContact,
+  dateCreated: user.dateCreated,
+});
+
+res.status(200).json({
       message: "Login successful",
       token,
       user: {
-        id: user._id,
+        _id: user._id,
+        userPermissionLevel: user.userPermissionLevel,
         userFName: user.userFName,
         userLName: user.userLName,
+        userBirthDate: user.userBirthDate,
+        userAddress: user.userAddress,
         userEmail: user.userEmail,
+        userContact: user.userContact,
         userName: user.userName,
-        userPermissionLevel: user.userPermissionLevel,
+        dateCreated: user.dateCreated,
+        dateUpdated: user.dateUpdated,
       },
     });
   } catch (error) {

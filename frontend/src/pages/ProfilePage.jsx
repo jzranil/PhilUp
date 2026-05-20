@@ -69,11 +69,30 @@ export default function ProfilePage() {
   }
 
   const fields = [
-    { label: "Username", value: user?.userName },
-    { label: "Full Name", value: `${user?.userFName || ""} ${user?.userLName || ""}` },
-    { label: "E-Mail", value: user?.userEmail },
-    { label: "Permission Level", value: user?.userPermissionLevel },
-  ];
+  { label: "Username", value: user?.userName },
+  { label: "First Name", value: user?.userFName },
+  { label: "Last Name", value: user?.userLName },
+  { label: "E-Mail", value: user?.userEmail },
+  { label: "Address", value: user?.userAddress },
+  { label: "Contact Number", value: user?.userContact },
+{
+  label: "Role",
+  value:
+    user?.userPermissionLevel === 1
+      ? "User"
+      : user?.userPermissionLevel === 50
+      ? "Admin"
+      : user?.userPermissionLevel === 100
+      ? "Super Admin"
+      : "Unknown",
+},
+];
+
+  const memberSince = user?.dateCreated
+  ? new Date(user.dateCreated).toLocaleDateString()
+  : user?._id
+  ? new Date(parseInt(user._id.substring(0, 8), 16) * 1000).toLocaleDateString()
+  : "N/A";
 
   const handleLogout = () => {
     logoutSession();
@@ -419,21 +438,21 @@ export default function ProfilePage() {
               }}
             >
               <button
-                style={{
-                  backgroundColor: "#1c618c",
-                  color: "#fffbf4",
-                  border: "none",
-                  borderRadius: "0.6vw",
-                  padding: "0.6vw 1vw",
-                  fontSize: "0.9vw",
-                  fontFamily: '"Roboto Mono", monospace',
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                Edit Profile
-              </button>
-
+  onClick={() => navigate("/edit-profile")}
+  style={{
+    backgroundColor: "#1c618c",
+    color: "#fffbf4",
+    border: "none",
+    borderRadius: "0.6vw",
+    padding: "0.6vw 1vw",
+    fontSize: "0.9vw",
+    fontFamily: '"Roboto Mono", monospace',
+    fontWeight: 700,
+    cursor: "pointer",
+  }}
+>
+  Edit Profile
+</button>
               <div style={{ borderTop: "0.15vw solid #c8e0f0", margin: "0.5vw 0" }} />
 
               <p
@@ -477,8 +496,8 @@ export default function ProfilePage() {
                   Member Since
                 </span>
                 <span style={{ fontSize: "1vw", fontWeight: 700, color: "#1c618c" }}>
-                  2025
-                </span>
+  {memberSince}
+</span>
               </div>
 
               <button

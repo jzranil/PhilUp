@@ -10,6 +10,7 @@ import fuelTypeRoute from "./routes/fuelTypeRoute.js";
 import stationLocationRoute from "./routes/stationLocationRoute.js";
 import fuelPriceRoute from "./routes/fuelPriceRoute.js";
 import userInfoRoute from "./routes/userInfoRoute.js";
+import logsRoute from "./routes/logsRoute.js";
 
 const app = express();
 dotenv.config();
@@ -36,3 +37,4 @@ app.use("/api", fuelTypeRoute);
 app.use("/api", stationLocationRoute);
 app.use("/api", fuelPriceRoute);
 app.use("/api", userInfoRoute);
+app.use("/api", logsRoute);

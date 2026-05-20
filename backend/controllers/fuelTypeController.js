@@ -23,7 +23,7 @@ export const createFuelType = async (req, res) => {
 export const getAllFuelTypes = async (req, res) => {
   try {
     const fuelTypeData = await FuelType.find();
-    if (!fuelTypeData || fuelTypeData.length === 0) {
+    if (!fuelTypeData) {
       return res.status(404).json({ message: "Fuel type data not found" }); // Changed 400 to 404
     }
     res.status(200).json(fuelTypeData);

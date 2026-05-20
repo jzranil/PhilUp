@@ -41,7 +41,7 @@ export const createFuelPrice = async (req, res) => {
 export const getAllFuelPrices = async (req, res) => {
   try {
     const fuelPriceData = await FuelPrice.find();
-    if (!fuelPriceData || fuelPriceData.length === 0) {
+    if (!fuelPriceData) {
       return res.status(404).json({ message: "Fuel price data not found" });
     }
     res.status(200).json(fuelPriceData);
@@ -70,7 +70,7 @@ export const getFuelPriceByStationLocID = async (req, res) => {
     const forEval = 0;
     
     const fuelPrices = await FuelPrice.find({ stationLocID, isAccepted, forEval });
-    if (!fuelPrices || fuelPrices.length === 0) {
+    if (!fuelPrices) {
       return res.status(404).json({ message: "Fuel prices not found for this station" });
     }
     res.status(200).json(fuelPrices);
@@ -83,7 +83,7 @@ export const getFuelPriceRequest = async (req, res) => {
   try {
     const forEval = 1;
     const fuelPrices = await FuelPrice.find({ forEval });
-    if (!fuelPrices || fuelPrices.length === 0) {
+    if (!fuelPrices) {
       return res.status(404).json({ message: "Fuel price requests not found" });
     }
     res.status(200).json(fuelPrices);

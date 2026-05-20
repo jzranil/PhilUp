@@ -31,7 +31,7 @@ export const createStationLocation = async (req, res) => {
 export const getAllStationLocations = async (req, res) => {
   try {
     const stationLocationData = await StationLocation.find();
-    if (!stationLocationData || stationLocationData.length === 0) {
+    if (!stationLocationData) {
       return res.status(404).json({ message: "Station location data not found" }); 
     }
     res.status(200).json(stationLocationData);
@@ -57,7 +57,7 @@ export const getStationLocationRequest = async (req, res) => {
   try {
     const forEval = 1;
     const stationLocationRequests = await StationLocation.find({ forEval });     
-    if (!stationLocationRequests || stationLocationRequests.length === 0) {
+    if (!stationLocationRequests) {
       return res.status(404).json({ message: "Station location requests not found" });
     }
     res.status(200).json(stationLocationRequests);

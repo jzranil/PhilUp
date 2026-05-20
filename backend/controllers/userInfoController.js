@@ -49,7 +49,8 @@ export const createUserInfo = async (req, res) => {
       await bcrypt.hash(userPassword,10);
 
     const newUser=new UserInfo({
-
+      
+      userPermissionLevel: 1,
       userFName,
       userLName,
       userBirthDate,

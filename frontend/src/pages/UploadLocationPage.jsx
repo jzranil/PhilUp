@@ -75,8 +75,12 @@ if (!loggedIn) {
           }}
         >
           <FaBell size={30} />
-          <FaUserCircle size={35} />
-        </div>
+<FaUserCircle
+  size={35}
+  style={{ cursor: "pointer" }}
+  onClick={() => navigate("/profile")}
+/>    
+    </div>
       </div>
 
       {/* CONTENT */}

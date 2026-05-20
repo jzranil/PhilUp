@@ -276,7 +276,7 @@ navigate("/profile");
 {getSessionUser()?.userName}
 </p>
 
-{getSessionUser()?.userPermissionLevel>0 && (
+{getSessionUser()?.userPermissionLevel >= 50 && (
 <p
 style={DROP_ITEM}
 onClick={()=>{
@@ -328,7 +328,7 @@ navigate("/profile");
 Profile
 </p>
 
-{getSessionUser()?.userPermissionLevel > 0 && (
+{getSessionUser()?.userPermissionLevel >= 50 && (
 <p
 style={DROP_LINK}
 onClick={()=>{

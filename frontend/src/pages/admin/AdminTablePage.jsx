@@ -40,8 +40,13 @@ const tableData = {
             username: users.userName,
             email: users.userEmail,
             contact: users.userContact,
-            role: users.userPermissionLevel >= 100 ? "Super Admin" : users.userPermissionLevel >= 1 ? "Admin" : "User",
-          };
+role:
+  users.userPermissionLevel >= 100
+    ? "Super Admin"
+    : users.userPermissionLevel >= 50
+    ? "Admin"
+    : "User",
+            };
         }).filter((user) => user.role === "User")
   ,
   },
@@ -57,8 +62,13 @@ const tableData = {
             username: users.userName,
             email: users.userEmail,
             contact: users.userContact,
-            role: users.userPermissionLevel >= 100 ? "Super Admin" : users.userPermissionLevel >= 1 ? "Admin" : "User",
-          };
+role:
+  users.userPermissionLevel >= 100
+    ? "Super Admin"
+    : users.userPermissionLevel >= 50
+    ? "Admin"
+    : "User",
+            };
         }).filter((user) => user.role === "Super Admin" || user.role === "Admin")
   ,},
   "registered-locations": {
@@ -137,8 +147,11 @@ const tableData = {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return page.rows;
     return page.rows.filter((row) =>
-      row.join(" ").toLowerCase().includes(query)
-    );
+  Object.values(row)
+    .join(" ")
+    .toLowerCase()
+    .includes(query)
+);
   }, [page.rows, searchQuery]);
 
   return (

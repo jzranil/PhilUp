@@ -234,9 +234,9 @@ const burgerActions = {
   "Switch as Admin": () => {
     setMenuOpen(false);
 
-    if(user?.userPermissionLevel > 0){
-      navigate("/admin");
-    }
+    if(user?.userPermissionLevel >= 50){
+   navigate("/admin");
+}
   },
 
   "Log Out": () => {
@@ -455,9 +455,9 @@ items={[
 ? [
     user?.userName,
 
-    ...(user?.userPermissionLevel > 0
-      ? ["Switch as Admin"]
-      : []),
+    ...(user?.userPermissionLevel >= 50
+  ? ["Switch as Admin"]
+  : []),
 
     "Log Out",
   ]
@@ -539,7 +539,7 @@ navigate("/profile");
 Profile
 </p>
 
-{user?.userPermissionLevel > 0 && (
+{user?.userPermissionLevel >= 50 && (
 <p
 className="lp-drop-item"
 onClick={()=>{

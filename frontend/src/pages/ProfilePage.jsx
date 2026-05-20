@@ -267,7 +267,7 @@ export default function ProfilePage() {
               {user?.userName}
             </p>
 
-            {user?.userPermissionLevel > 0 && (
+            {user?.userPermissionLevel >= 50 && (
               <p
                 onClick={() => {
                   setMenuOpen(false);
@@ -314,7 +314,7 @@ export default function ProfilePage() {
               {user?.userName}
             </p>
 
-            {user?.userPermissionLevel > 0 && (
+            {user?.userPermissionLevel >= 50 && (
               <p
                 onClick={() => {
                   setSettingsOpen(false);

@@ -121,17 +121,18 @@ export default function AdminRequestReviewPage({ type }) {
       description: "Review submitted fuel price updates before they go live.",
       columns: ["Request ID", "Station", "Fuel Type", "New Price", "Submitted By", "Status", "Action"],
       rows: [
-        {
-          id: "PR-501",
-          brand: "Petron",
-          station: "Petron Sampaloc",
-          address: "Legarda St, Sampaloc, Manila",
-          fuelType: "Gasoline",
-          price: "PHP 62.15",
-          submittedBy: "Juan Dela Cruz",
-          status: "Pending",
-        },priceRequest
-        .map((request) => {
+  {
+    id: "PR-501",
+    brand: "Petron",
+    station: "Petron Sampaloc",
+    address: "Legarda St, Sampaloc, Manila",
+    fuelType: "Gasoline",
+    price: "PHP 62.15",
+    submittedBy: "Juan Dela Cruz",
+    status: "Pending",
+  },
+
+  ...priceRequest.map((request) => {
           const brand = brands.find((b) => b._id === request.brandID);
           const user = users.find((u) => u._id === request.uploadedBy);
           const fuelType = fuelTypes.find((ft) => ft._id === request.fuelTypeID);

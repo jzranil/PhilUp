@@ -198,9 +198,9 @@ Nearest: () => {
   "Switch as Admin": () => {
   setMenuOpen(false);
 
-  if(user?.userPermissionLevel > 0){
-      navigate("/admin");
-  }
+  if(user?.userPermissionLevel >= 50){
+  navigate("/admin");
+}
 },
 
   "Log Out": () => {
@@ -394,7 +394,7 @@ Nearest: () => {
         ? [
             user?.userName,
             
-            ...(user?.userPermissionLevel > 0
+            ...(user?.userPermissionLevel >= 50
               ? ["Switch as Admin"]
               : []),
 
@@ -577,7 +577,7 @@ onClick={() => {
 {user?.userName}
         </p>
 
-       {user?.userPermissionLevel > 0 && (
+       {user?.userPermissionLevel >= 50 && (
   <p
     style={{cursor:"pointer"}}
     onClick={() => {

@@ -1,1 +1,24 @@
 @import "tailwindcss";
+
+.philup-swal-popup {
+  border: 0.2vw solid #1c618c;
+  border-radius: 1vw;
+  font-family: "Roboto Mono", monospace;
+}
+
+.philup-swal-title {
+  color: #1c618c;
+  font-weight: 700;
+}
+
+.philup-swal-text {
+  color: #3178ad;
+  font-weight: 600;
+}
+
+.philup-swal-confirm,
+.philup-swal-cancel {
+  border-radius: 0.5vw !important;
+  font-family: "Roboto Mono", monospace;
+  font-weight: 700;
+}

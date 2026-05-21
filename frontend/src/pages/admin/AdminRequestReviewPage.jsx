@@ -1,6 +1,12 @@
 import { useMemo, useState, useEffect } from "react";
 import axios from "axios";
 import AdminLayout from "./AdminLayout";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showConfirm,
+} from "../../utils/swal";
 
 const getLogoUrl = (brandName) => {
   // Guard clause to handle missing or undefined brand names gracefully
@@ -124,7 +130,9 @@ export default function AdminRequestReviewPage({ type }) {
         const fuelType = fuelTypes.find((ft) => ft._id === request.fuelTypeID);
 
         // Fallback to local evaluation change status if present
-        const currentStatus = evaluatedStatuses[request._id] || (request.forEval === 0 ? "Approved" : "Pending");
+const currentStatus =
+ evaluatedStatuses[request._id] ||
+ (request.forEval === 0 ? "Approved" : "Pending");
 
         return {
           id: request._id,
@@ -184,24 +192,63 @@ export default function AdminRequestReviewPage({ type }) {
 
   const updateStatus = async (id, action) => {
   try {
+
+    const confirmed = await showConfirm(
+ action==="Approved"
+ ? "Approve Request?"
+ : "Decline Request?",
+ action==="Approved"
+ ? "This request will go live."
+ : "This request will be permanently removed."
+);
+
+    if (!confirmed) return;
+
     const isPriceType = type === "price" || !type;
 
     if (action === "Declined") {
+
       if (isPriceType) {
-        await axios.delete(`http://localhost:9000/api/fuel-price-requests/${id}`);
-        setPriceRequest((prev) => prev.filter((req) => req._id !== id));
+        await axios.delete(
+          `http://localhost:9000/api/fuel-price-requests/${id}`
+        );
+
+        setPriceRequest(prev =>
+          prev.filter(req => req._id !== id)
+        );
+
       } else {
-        await axios.delete(`http://localhost:9000/api/station-location-requests/${id}`);
-        setLocationRequest((prev) => prev.filter((req) => req._id !== id));
+
+        await axios.delete(
+          `http://localhost:9000/api/station-location-requests/${id}`
+        );
+
+        setLocationRequest(prev =>
+          prev.filter(req => req._id !== id)
+        );
       }
+
+      setEvaluatedStatuses(prev => ({
+   ...prev,
+   [id]: "Declined"
+}));
+
+      await showSuccess(
+        "Request Declined",
+        "The request has been removed."
+      );
+
       return;
     }
 
     if (isPriceType) {
-      const newRequest = priceRequest.find((req) => req._id === id);
+
+      const newRequest = priceRequest.find(
+        req => req._id === id
+      );
 
       const oldApproved = priceRequest.find(
-        (req) =>
+        req =>
           req._id !== id &&
           req.stationLocID === newRequest.stationLocID &&
           req.fuelTypeID === newRequest.fuelTypeID &&
@@ -209,70 +256,120 @@ export default function AdminRequestReviewPage({ type }) {
       );
 
       if (oldApproved) {
-        await axios.put(`http://localhost:9000/api/fuel-prices/${oldApproved._id}`, {
-          isAccepted: 0,
-        });
+        await axios.put(
+          `http://localhost:9000/api/fuel-price-requests/${oldApproved._id}`,
+          { isAccepted:0 }
+        );
       }
 
-      await axios.put(`http://localhost:9000/api/fuel-prices/${id}`, {
-        isAccepted: 1,
-        forEval: 0,
-      });
+      await axios.put(
+        `http://localhost:9000/api/fuel-price-requests/${id}`,
+        {
+          isAccepted:1,
+          forEval:0
+        }
+      );
 
-      setPriceRequest((prev) =>
-        prev.map((req) => {
-          if (oldApproved && req._id === oldApproved._id) {
-            return { ...req, isAccepted: 0 };
+      setPriceRequest(prev =>
+        prev.map(req => {
+
+          if (
+            oldApproved &&
+            req._id===oldApproved._id
+          ) {
+            return {
+              ...req,
+              isAccepted:0
+            };
           }
 
-          if (req._id === id) {
-            return { ...req, isAccepted: 1, forEval: 0 };
+          if(req._id===id){
+            return {
+              ...req,
+              isAccepted:1,
+              forEval:0
+            };
           }
 
           return req;
         })
       );
 
-      return;
+    } else {
+
+      const newRequest = locationRequest.find(
+        req => req._id===id
+      );
+
+      const oldApproved = locationRequest.find(
+        req =>
+          req._id!==id &&
+          Number(req.stationLong)===Number(newRequest.stationLong) &&
+          Number(req.stationLat)===Number(newRequest.stationLat) &&
+          req.isAccepted===1
+      );
+
+      if(oldApproved){
+
+        await axios.put(
+          `http://localhost:9000/api/station-location-requests/${oldApproved._id}`,
+          {isAccepted:0}
+        );
+      }
+
+      await axios.put(
+        `http://localhost:9000/api/station-location-requests/${id}`,
+        {
+          isAccepted:1,
+          forEval:0
+        }
+      );
+
+      setLocationRequest(prev =>
+        prev.map(req=>{
+
+          if(
+            oldApproved &&
+            req._id===oldApproved._id
+          ){
+            return {
+              ...req,
+              isAccepted:0
+            };
+          }
+
+          if(req._id===id){
+            return {
+              ...req,
+              isAccepted:1,
+              forEval:0
+            };
+          }
+
+          return req;
+
+        })
+      );
     }
 
-    const newRequest = locationRequest.find((req) => req._id === id);
+    setEvaluatedStatuses(prev=>({
+ ...prev,
+ [id]:"Approved"
+}));
 
-    const oldApproved = locationRequest.find(
-      (req) =>
-        req._id !== id &&
-        Number(req.stationLong) === Number(newRequest.stationLong) &&
-        Number(req.stationLat) === Number(newRequest.stationLat) &&
-        req.isAccepted === 1
+await showSuccess(
+ "Request Approved",
+ "Changes were successfully applied."
+);
+
+  } catch(error){
+
+    console.error(error);
+
+    showError(
+      "Action Failed",
+      "Please try again."
     );
-
-    if (oldApproved) {
-      await axios.put(`http://localhost:9000/api/station-location-requests/${oldApproved._id}`, {
-        isAccepted: 0,
-      });
-    }
-
-    await axios.put(`http://localhost:9000/api/station-location-requests/${id}`, {
-      isAccepted: 1,
-      forEval: 0,
-    });
-
-    setLocationRequest((prev) =>
-      prev.map((req) => {
-        if (oldApproved && req._id === oldApproved._id) {
-          return { ...req, isAccepted: 0 };
-        }
-
-        if (req._id === id) {
-          return { ...req, isAccepted: 1, forEval: 0 };
-        }
-
-        return req;
-      })
-    );
-  } catch (error) {
-    console.error("Request action failed:", error);
-    alert("Action failed. Please try again.");
   }
 };
 
@@ -341,15 +438,29 @@ export default function AdminRequestReviewPage({ type }) {
                   )}
                   <td style={cellStyle}>{row.uploadedBy}</td>
                   <td style={cellStyle}>
-                    <span style={{ color: row.status === "Accepted" ? "#22a855" : row.status === "Declined" ? "#e53535" : "#3178ad", fontWeight: 700 }}>
-                      {row.status}
+<span
+style={{
+color:
+row.status==="Approved"
+? "#22a855"
+: row.status==="Declined"
+? "#e53535"
+: "#3178ad",
+fontWeight:700
+}}
+>
+                        {row.status}
                     </span>
                   </td>
                   <td style={cellStyle}>
                     <div style={{ display: "flex", gap: "0.4vw", flexWrap: "wrap" }}>
-                      <button type="button" onClick={() => updateStatus(row.id, "Accepted")} style={actionButtonStyle("accept")}>
-                        Accept
-                      </button>
+                      <button
+type="button"
+onClick={() => updateStatus(row.id,"Approved")}
+style={actionButtonStyle("accept")}
+>
+Approve
+</button>
                       <button type="button" onClick={() => updateStatus(row.id, "Declined")} style={actionButtonStyle("decline")}>
                         Decline
                       </button>

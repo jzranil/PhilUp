@@ -8,6 +8,12 @@ import axios from "axios";
 import LoadingScreen from "../components/LoadingScreen";
 import HomeSearchPanel from "../components/HomeSearchPanel";
 import GasPriceBoard from "../components/GasPriceBoard";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showConfirm,
+} from "../utils/swal";
 
 // Asset imports
 import philUpLogo from "../assets/Phil Up 2.png";
@@ -50,6 +56,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [myLat, setMyLat] = useState(null);
   const [myLng, setMyLng] = useState(null);
+  
 
   const navigate = useNavigate();
   const user = getSessionUser();
@@ -69,6 +76,8 @@ export default function HomePage() {
   const wave3Ref = useRef(null);
   const wave4Ref = useRef(null);
 
+  const [locationDenied, setLocationDenied] = useState(false);
+
   // Scroll wave animation & Data Fetching
   useEffect(() => {
     async function fetchData() {
@@ -87,8 +96,8 @@ export default function HomePage() {
       } catch (error) {
         console.error("Failed to fetch data", error);
       } finally {
-        setTimeout(() => setLoading(false), 1000);
-      }
+   setLoading(false);
+}
     }
     fetchData();
 
@@ -150,19 +159,40 @@ export default function HomePage() {
 
   // Geolocation
   const handleGetLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          setLocationGranted(true);
-          setMapSrc(
-            `https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d13758.385273920467!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sgas%20station!5e0!3m2!1sen!2sph!4v1746668755734!5m2!1sen!2sph`
-          );
-        },
-        () => {}
+  if (!navigator.geolocation) {
+    showError(
+      "Unsupported",
+      "Geolocation is not supported by this browser."
+    );
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude } = pos.coords;
+
+      setLocationGranted(true);
+
+      setMyLat(latitude);
+      setMyLng(longitude);
+
+      setMapSrc(
+        `https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d13758.385273920467!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sgas%20station!5e0!3m2!1sen!2sph`
       );
-    }
-  };
+    },
+
+    () => {
+   if(locationDenied) return;
+
+   setLocationDenied(true);
+
+   showWarning(
+      "Location Required",
+      "Please allow location access to find nearby gas stations."
+   );
+}
+  );
+};
 
   const getHaversineDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
@@ -180,34 +210,33 @@ export default function HomePage() {
     return R * c;
   };
 
-  const topThreeNearest = useMemo(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          setMyLat(latitude);
-          setMyLng(longitude);
-        },
-        () => {}
-      );
-    }
-    
-    if (!myLat || !myLng) return [];
 
-    return locations
-      .map((location) => {
-        const brand = brands.find((b) => b._id === location.brandID);
-        const distance = getHaversineDistance(
-          myLat,
-          myLng,
-          location.stationLat,
-          location.stationLong
-        );
-        return { ...location, distance, brandLogo: getLogoUrl(brand?.brandDesc) };
-      })
-      .sort((a, b) => a.distance - b.distance);
-      
-  }, [myLat, myLng, locations, brands]);
+ const topThreeNearest = useMemo(() => {
+if(myLat === null || myLng === null) return [];
+
+  return locations
+    .map((location) => {
+      const brand = brands.find(
+        (b) => b._id === location.brandID
+      );
+
+      const distance = getHaversineDistance(
+        myLat,
+        myLng,
+        location.stationLat,
+        location.stationLong
+      );
+
+      return {
+        ...location,
+        distance,
+        brandLogo: getLogoUrl(brand?.brandDesc),
+      };
+    })
+    .sort((a,b)=>a.distance-b.distance)
+    .slice(0,3);
+
+},[myLat,myLng,locations,brands]);
 
   useEffect(() => { handleGetLocation(); }, []);
 
@@ -257,11 +286,36 @@ export default function HomePage() {
     Locations: goToLocations,
     Nearest: () => { setMenuOpen(false); openSearch("nearest"); },
     [user?.userName]: () => { setMenuOpen(false); navigate("/profile"); },
-    "Switch as Admin": () => {
-      setMenuOpen(false);
-      if(user?.userPermissionLevel >= 50){ navigate("/admin"); }
-    },
-    "Log Out": () => { setMenuOpen(false); logoutSession(); navigate("/login"); },
+    "Switch as Admin": async () => {
+   setMenuOpen(false);
+
+   await showSuccess(
+   "Admin Access",
+   "Redirecting to dashboard..."
+);
+
+navigate("/admin");
+},
+
+"Log Out": async () => {
+  setMenuOpen(false);
+
+  const confirmed = await showConfirm(
+    "Log Out?",
+    "Are you sure you want to leave your account?"
+  );
+
+  if (!confirmed) return;
+
+  logoutSession();
+
+  await showSuccess(
+   "Logged Out",
+   "See you again soon!"
+);
+
+navigate("/login");
+},
     "Log In": () => { setMenuOpen(false); navigate("/login"); }
   };
 

@@ -21,6 +21,7 @@ import {
 
 import PhilUpLogo from "../../assets/Phil UP 2.png";
 import SearchIcon from "../../assets/search.png";
+import { showConfirm } from "../../utils/swal";
 
 const tableLinks = [
   { label: "Registered Users", path: "/admin/registered-users" },
@@ -348,9 +349,21 @@ useEffect(() => {
           ))}
 
           <div
-  onClick={() => {
+  onClick={async () => {
+
+    const confirmed = await showConfirm(
+      "Log Out?",
+      "Are you sure you want to log out?"
+    );
+
+    if (!confirmed) return;
+
     logoutSession();
-    navigate("/login");
+
+    navigate("/login", {
+      replace: true
+    });
+
   }}
   className="sb-item"
   style={{

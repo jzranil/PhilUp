@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomeLayoutPage from "../pages/HomeLayoutPage"; // 👈 Import the layout wrapper
+import HomeLayoutPage from "../pages/HomeLayoutPage"; 
 
 import HomePage from "../pages/HomePage";
 import Login from "../pages/Login";
@@ -9,7 +9,6 @@ import LocationDetailsPage from "../pages/LocationDetailsPage";
 import UploadLocationPage from "../pages/UploadLocationPage";
 import EditProfilePage from "../pages/EditProfilePage";
 
-// Admin Page Imports
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminUsers from "../pages/admin/AdminUsers";
 import AdminLocationRequestPage from "../pages/admin/AdminLocationRequestPage";

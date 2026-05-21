@@ -16,6 +16,7 @@ import {
   getSessionUser,
   logoutSession
 } from "../../utils/session";
+import { showConfirm } from "../../utils/swal";
 
 /* ── Asset Imports ── */
 /* ── Asset Imports ── */
@@ -567,22 +568,31 @@ useEffect(() => {
           ))}
 
           <div
-  onClick={() => {
+  onClick={async () => {
+
+    const confirmed = await showConfirm(
+      "Log Out?",
+      "Are you sure you want to log out?"
+    );
+
+    if(!confirmed) return;
+
     logoutSession();
-    navigate("/login");
+
+navigate("/login", { replace:true });
   }}
   className="sb-item"
   style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.45vw",
-    fontWeight: 700,
-    marginTop: "0.5vw",
-    cursor: "pointer"
+    display:"flex",
+    alignItems:"center",
+    gap:"0.45vw",
+    fontWeight:700,
+    marginTop:"0.5vw",
+    cursor:"pointer"
   }}
 >
-  <span>Log Out</span>
-  <LogOut size="0.95vw" />
+   <span>Log Out</span>
+   <LogOut size="0.95vw"/>
 </div>
         </aside>
 

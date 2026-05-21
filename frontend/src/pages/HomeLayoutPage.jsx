@@ -474,8 +474,7 @@ async function fetchData() {
             loading={loading}
             activeSearchTab={activeSearchTab}
             mapSrc={mapSrc}
-            onSelectStation={(station) => {console.log("Selected station data:", station);
-                navigate(`/locations/${station._id}`);}
+            onSelectStation={(station) => {navigate(`/locations/${station._id}`)}
             }
             />
       </div>

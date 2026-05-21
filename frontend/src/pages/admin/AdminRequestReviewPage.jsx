@@ -124,7 +124,7 @@ export default function AdminRequestReviewPage({ type }) {
         const fuelType = fuelTypes.find((ft) => ft._id === request.fuelTypeID);
 
         // Fallback to local evaluation change status if present
-        const currentStatus = evaluatedStatuses[request._id] || (request.forEval === 0 ? "Pending" : "Approved");
+        const currentStatus = evaluatedStatuses[request._id] || (request.forEval === 0 ? "Approved" : "Pending");
 
         return {
           id: request._id,
@@ -209,12 +209,12 @@ export default function AdminRequestReviewPage({ type }) {
       );
 
       if (oldApproved) {
-        await axios.put(`http://localhost:9000/api/fuel-price-requests/${oldApproved._id}`, {
+        await axios.put(`http://localhost:9000/api/fuel-prices/${oldApproved._id}`, {
           isAccepted: 0,
         });
       }
 
-      await axios.put(`http://localhost:9000/api/fuel-price-requests/${id}`, {
+      await axios.put(`http://localhost:9000/api/fuel-prices/${id}`, {
         isAccepted: 1,
         forEval: 0,
       });

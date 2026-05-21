@@ -44,6 +44,7 @@ const GasPriceDigits = ({ digits = "00.00" }) => {
 };
 
 export default function HomePage() {
+  const [fuelPrices, setFuelPrices] = useState([]);
   const [locations, setLocations] = useState([]);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,12 +74,16 @@ export default function HomePage() {
     async function fetchData() {
       try {
         setLoading(true);
-        const [responseLocations, responseBrands] = await Promise.all([
+        const [responseLocations, responseBrands, responseFuelPrices] = await Promise.all([
           axios.get("http://localhost:9000/api/station-locations/coverage"),
           axios.get("http://localhost:9000/api/brands/"),
+          axios.get("http://localhost:9000/api/fuel-price-requests/approved"),
         ]);
         setLocations(responseLocations.data);
         setBrands(responseBrands.data);
+        setFuelPrices(responseFuelPrices.data);
+        
+
       } catch (error) {
         console.error("Failed to fetch data", error);
       } finally {
@@ -105,6 +110,43 @@ export default function HomePage() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const sortedStations = useMemo(() => {
+    if (!locations.length || !fuelPrices.length) return []; // Safety check
+
+    const priceStats = fuelPrices.reduce((acc, curr) => {
+      const { stationLocID, fuelPrice } = curr;
+      if (!acc[stationLocID]) acc[stationLocID] = { total: 0, count: 0 };
+      acc[stationLocID].total += fuelPrice;
+      acc[stationLocID].count += 1;
+      return acc;
+    }, {});
+
+    console.log("Price stats by stationLocID:", priceStats); // Debug log to check the aggregation results
+
+    const averagePrices = {};
+    for (const id in priceStats) {
+      averagePrices[id] = priceStats[id].total / priceStats[id].count;
+    }
+
+    console.log("Average prices by stationLocID:", averagePrices); // Debug log to check average price calculations
+
+    const combinedData = locations.map(station => ({
+      ...station,
+      avgPrice: averagePrices[station.stationLocID] || 0 
+    }));
+
+    console.log("Combined station data with average prices:", combinedData); // Debug log to check combined data before sorting
+
+    return combinedData.sort((a, b) => a.avgPrice - b.avgPrice);
+  }, [locations, fuelPrices]); 
+
+  const TopLowestStation = sortedStations.length > 0 ? sortedStations[0] : null;
+  const TopLowestPrices = fuelPrices.filter(
+    fp => fp.stationLocID === TopLowestStation?.stationLocID
+  );
+
+  console.log("Top lowest station:", TopLowestStation); // Debug log to check the top lowest station
 
   // Geolocation
   const handleGetLocation = () => {
@@ -414,8 +456,7 @@ export default function HomePage() {
           loading={loading}
           activeSearchTab={activeSearchTab}
           mapSrc={mapSrc}
-          onSelectStation={(station) => {console.log("Selected station data:", station);
-            navigate(`/locations/${station._id}`);}
+          onSelectStation={(station) => {navigate(`/locations/${station._id}`)}
           }
         />
       </div>
@@ -439,23 +480,16 @@ export default function HomePage() {
       <div style={{ width: "100vw", fontSize: "10vw", zIndex: 5 }}>
         <div className="relative z-5" style={{ backgroundColor: "#1c618c", width: "100vw" }}>
 
-          {/* ---- TOP VISITS ---- */}
           <div id="homePageTopVisits">
             <div style={{ display: "flex", flexWrap: "wrap", flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", margin: "0 5vw", width: "90vw", color: "#fffbf4", fontFamily: '"Roboto Mono", monospace', fontSize: "1.5vw" }}>
               <div>
                 <div style={{ display: "flex", flexWrap: "nowrap", alignItems: "center", fontSize: "2vw", height: "6vw" }}>
                   <img src={petronLogo} alt="Petron" style={{ height: "6vw" }} />
-                  <p>Reg Trading Rizal Avenue - Malabon Street, Sta. Cruz, Manila</p>
+                  <p>{TopLowestStation?.stationAddress || "Address not available"}</p>
                 </div>
 
                 <GasPriceBoard 
-                  gasData={[
-                    { fuelDesc: "Blaze 100 Euro 6 (Gasoline)", fuelPrice: "123.45" },
-                    { fuelDesc: "XCS Euro 4 (Gasoline)", fuelPrice: "123.45" },
-                    { fuelDesc: "Max Euro 4 (Diesel)", fuelPrice: "123.45" },
-                    { fuelDesc: "Xtra Advance Euro 4 (Gasoline)", fuelPrice: "123.45" },
-                    { fuelDesc: "Turbo (Diesel)", fuelPrice: "123.45" },
-                  ]} 
+                  gasData={TopLowestPrices.map(fp => ({ fuelType: fp.fuelType, fuelPrice: fp.fuelPrice }))} 
                 />
               </div>
 

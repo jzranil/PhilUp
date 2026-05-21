@@ -10,12 +10,8 @@ export const createFuelPrice = async (req, res) => {
       uploadedBy 
     } = req.body;
     
-    // Check if there's already a pending request for this station/fuel/user
     const fuelPriceExist = await FuelPrice.findOne({ 
-      stationLocID, 
-      fuelTypeID, 
-      uploadedBy, 
-      forEval: 1 
+      ...req.body
     });
     
     if (fuelPriceExist) {

@@ -972,7 +972,6 @@ placeholder={
         value={priceForm.stationLocID}
         onChange={(e) => setPriceForm({ ...priceForm, stationLocID: e.target.value })}
       >
-        <option value="">Select Station</option>
         {locations.map((loc) => {
           const brand = brands.find((b) => b._id === loc.brandID);
           return (
@@ -995,6 +994,14 @@ placeholder={
           </option>
         ))}
       </select>
+
+      <input
+        style={modalInputStyle}
+        type="text"
+        placeholder="Fuel Title/Description"
+        value={priceForm.fuelDesc}
+        onChange={(e) => setPriceForm({ ...priceForm, fuelDesc: e.target.value })}
+      />
 
       <input
         style={modalInputStyle}

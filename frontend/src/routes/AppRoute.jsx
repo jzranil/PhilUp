@@ -6,7 +6,6 @@ import Login from "../pages/Login";
 import ProfilePage from "../pages/ProfilePage";
 import LocationsPage from "../pages/LocationsPage";
 import LocationDetailsPage from "../pages/LocationDetailsPage";
-import UploadPricePage from "../pages/UploadPricePage";
 import UploadLocationPage from "../pages/UploadLocationPage";
 import EditProfilePage from "../pages/EditProfilePage";
 
@@ -40,7 +39,6 @@ const AppRoutes = () => {
           <Route path="/locations/:locationId" element={<LocationDetailsPage />} />
           <Route path="/upload-location" element={<UploadLocationPage />} />
           {/* Adjusted to dynamically accept the parameter passed from LocationDetailsPage */}
-          <Route path="/upload-price/:locationId" element={<UploadPricePage />} />
         </Route>
 
         {/* ── ADMIN MANAGEMENT PANEL ROUTES ── */}

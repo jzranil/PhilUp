@@ -1,16 +1,14 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomeLayoutPage from "../pages/HomeLayoutPage"; // 👈 Import the layout wrapper
+import HomeLayoutPage from "../pages/HomeLayoutPage"; 
 
 import HomePage from "../pages/HomePage";
 import Login from "../pages/Login";
 import ProfilePage from "../pages/ProfilePage";
 import LocationsPage from "../pages/LocationsPage";
 import LocationDetailsPage from "../pages/LocationDetailsPage";
-import UploadPricePage from "../pages/UploadPricePage";
 import UploadLocationPage from "../pages/UploadLocationPage";
 import EditProfilePage from "../pages/EditProfilePage";
 
-// Admin Page Imports
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminUsers from "../pages/admin/AdminUsers";
 import AdminLocationRequestPage from "../pages/admin/AdminLocationRequestPage";
@@ -40,7 +38,6 @@ const AppRoutes = () => {
           <Route path="/locations/:locationId" element={<LocationDetailsPage />} />
           <Route path="/upload-location" element={<UploadLocationPage />} />
           {/* Adjusted to dynamically accept the parameter passed from LocationDetailsPage */}
-          <Route path="/upload-price/:locationId" element={<UploadPricePage />} />
         </Route>
 
         {/* ── ADMIN MANAGEMENT PANEL ROUTES ── */}

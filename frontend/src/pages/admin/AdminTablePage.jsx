@@ -1200,6 +1200,14 @@ placeholder={
 
       <input
         style={modalInputStyle}
+        type="text"
+        placeholder="Fuel Title/Description"
+        value={priceForm.fuelDesc}
+        onChange={(e) => setPriceForm({ ...priceForm, fuelDesc: e.target.value })}
+      />
+
+      <input
+        style={modalInputStyle}
         type="number"
         placeholder="Fuel Price"
         value={priceForm.fuelPrice}

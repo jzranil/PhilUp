@@ -5,9 +5,7 @@ export const createStationLocation = async (req, res) => {
     const { brandID, stationLong, stationLat } = req.body;    
     
     const stationExist = await StationLocation.findOne({ 
-      brandID, 
-      stationLong, 
-      stationLat 
+      ...req.body
     });
     
     if (stationExist) {

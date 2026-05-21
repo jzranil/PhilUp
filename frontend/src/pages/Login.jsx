@@ -2,6 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import logo from "../assets/Phil UP 2.png";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showConfirm,
+} from "../utils/swal";
 
 const LOGO_SRC = logo;
 
@@ -367,7 +373,10 @@ const API_URL = "http://localhost:9000/api";
 const handleLogin = async () => {
 
   if (!username || !password) {
-  alert("Please enter username and password");
+showWarning(
+  "Missing Credentials",
+  "Please enter username and password."
+);
   return;
 }
 
@@ -379,13 +388,21 @@ const handleLogin = async () => {
 localStorage.setItem("token", res.data.token);
 localStorage.setItem("user", JSON.stringify(res.data.user));
 
+await showSuccess(
+  "Welcome Back!",
+  "Login successful."
+);
+
 if (res.data.user.userPermissionLevel >= 50) {
     navigate("/admin");
 } else {
     navigate("/profile");
 }
   } catch (error) {
-    alert(error.response?.data?.message || "Login failed.");
+    showError(
+      "Login Failed",
+      error.response?.data?.message || "An error occurred during login."
+    );
   }
 };
 
@@ -396,37 +413,58 @@ const contactRegex = /^09\d{9}$/;
 const today = new Date().toISOString().split("T")[0];
 
 if (!firstName || !lastName || !email || !contact || !regPass || !regPass2) {
-  alert("Please fill all required fields.");
+showWarning(
+   "Missing Information",
+   "Please fill all required fields."
+);
   return;
 }
 
 if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
-  alert("Names should not contain numbers or special characters.");
+  showWarning(
+    "Invalid Names",
+    "Names should not contain numbers or special characters."
+  );
   return;
 }
 
 if (!emailRegex.test(email)) {
-  alert("Please enter a valid email address.");
+  showWarning(
+    "Invalid Email",
+    "Please enter a valid email address."
+  );
   return;
 }
 
 if (firstName.length > 30 || lastName.length > 30) {
-  alert("First name and last name must be 30 characters only.");
+  showWarning(
+    "Name Too Long",
+    "First name and last name must be 30 characters only."
+  );
   return;
 }
 
 if (email.length > 50) {
-  alert("Email must be 50 characters only.");
+  showWarning(
+    "Email Too Long",
+    "Email must be 50 characters only."
+  );
   return;
 }
 
 if (contact.length > 11) {
-  alert("Contact number must be 11 digits.");
+  showWarning(
+    "Contact Number Too Long",
+    "Contact number must be 11 digits."
+  );
   return;
 }
 
 if (!contactRegex.test(contact)) {
-  alert("Contact number must be 11 digits and start with 09.");
+  showWarning(
+    "Invalid Contact Number",
+    "Contact number must be 11 digits and start with 09."
+  );
   return;
 }
 
@@ -436,17 +474,26 @@ const minBirthDate = new Date();
 minBirthDate.setFullYear(minBirthDate.getFullYear() - 13);
 
 if (birthDate > minBirthDate) {
-  alert("You must be at least 13 years old.");
+  showWarning(
+    "Invalid Birthday",
+    "You must be at least 13 years old."
+  );
   return;
 }
 
 if (regPass.length < 6) {
-  alert("Password must be at least 6 characters.");
+  showWarning(
+    "Invalid Password",
+    "Password must be at least 6 characters."
+  );
   return;
 }
 
   if (regPass !== regPass2) {
-    alert("Passwords do not match.");
+    showWarning(
+      "Passwords Do Not Match",
+      "Please ensure both password fields are identical."
+    );
     return;
   }
 
@@ -462,7 +509,10 @@ if (regPass.length < 6) {
       userPassword: regPass,
     });
 
-    alert("Account created successfully!");
+    await showSuccess(
+      "Account Created",
+      "Your account has been created successfully."
+    );
 
     setUsername(email);
 setPassword(regPass);
@@ -478,7 +528,10 @@ setRegPass2("");
 
     goToLogin();
   } catch (error) {
-    alert(error.response?.data?.message || "Signup failed.");
+    showError(
+      "Signup Failed",
+      error.response?.data?.message || "An error occurred during signup."
+    );
   }
 };
 

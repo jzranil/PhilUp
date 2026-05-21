@@ -1,14 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getSessionUser } from "../utils/session";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showConfirm,
+} from "../utils/swal";
 
 export default function EditProfilePage() {
   const navigate = useNavigate();
   const user = getSessionUser();
 
+  useEffect(() => {
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+
+  return () => {
+    document.body.style.overflow = "auto";
+    document.documentElement.style.overflow = "auto";
+  };
+}, []);
+
   const [formData, setFormData] = useState({
-    
     userName: user?.userName || "",
     userFName: user?.userFName || "",
     userLName: user?.userLName || "",
@@ -44,160 +59,209 @@ export default function EditProfilePage() {
     e.preventDefault();
 
     if (
-  !formData.userName ||
-  !formData.userFName ||
-  !formData.userLName ||
-  !formData.userEmail ||
-  !formData.userContact
-) {
-  alert("Please fill all required fields.");
-  return;
-}
+      !formData.userName ||
+      !formData.userFName ||
+      !formData.userLName ||
+      !formData.userEmail ||
+      !formData.userContact
+    ) {
+      await showWarning(
+        "Missing Fields",
+        "Please fill all required fields."
+      );
+      return;
+    }
 
     if (!formData.userEmail.includes("@")) {
-      alert("Email must contain @.");
+      await showWarning(
+        "Invalid Email",
+        "Email must contain @"
+      );
       return;
     }
 
     if (!/^09\d{9}$/.test(formData.userContact)) {
-      alert("Contact number must be 11 digits and start with 09.");
+      await showWarning(
+        "Invalid Contact",
+        "Contact number must start with 09 and contain 11 digits."
+      );
       return;
     }
 
     try {
-      const userId = user?._id || user?.id || user?.userID;
+      const userId =
+        user?._id ||
+        user?.id ||
+        user?.userID;
 
-if (!userId) {
-  alert("User ID not found. Please log out and log in again.");
-  return;
-}
+      if (!userId) {
+        await showError(
+          "User Missing",
+          "Please login again."
+        );
+        return;
+      }
 
-const res = await axios.put(
-  `http://localhost:9000/api/users/${userId}`,
-  formData
-);
+      const confirmed = await showConfirm(
+        "Update Profile?",
+        "Save your profile changes?"
+      );
 
-const updatedUser = res.data.user || res.data;
-localStorage.setItem("user", JSON.stringify(updatedUser));
+      if (!confirmed) return;
 
-      alert("Profile updated successfully!");
+      const res = await axios.put(
+        `http://localhost:9000/api/users/${userId}`,
+        formData
+      );
+
+      const updatedUser =
+        res.data.user || res.data;
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(updatedUser)
+      );
+
+      await showSuccess(
+        "Profile Updated",
+        "Your profile updated successfully."
+      );
+
       navigate("/profile");
-    } catch (error) {
-alert(
-  error.response?.data?.message ||
-  error.response?.data?.errorMessage ||
-  "Failed to update profile."
-);
+
+    } catch(error){
+
+      await showError(
+        "Update Failed",
+        error.response?.data?.message ||
+        "Unable to update profile."
+      );
+
     }
   }
 
   const inputStyle = {
-    width: "100%",
-    padding: "0.9vw 1vw",
-    marginBottom: "1vw",
-    borderRadius: "0.7vw",
-    border: "0.15vw solid #1c618c",
-    outline: "none",
-    fontFamily: '"Roboto Mono", monospace',
-    color: "#1c618c",
-    backgroundColor: "#fffbf4",
-    fontWeight: 700,
-  };
+  width: "100%",
+  height: "44px",
+  padding: "8px 16px",
+  marginBottom: "9px",
+  border: "2px solid #15689b",
+  borderRadius: "13px",
+  fontSize: "0.95rem",
+  color: "#15689b",
+  fontWeight: "700",
+  fontFamily: '"Roboto Mono", monospace',
+  background: "#f7f3ed",
+};
 
   return (
+
     <main
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#fffbf4",
-        padding: "120px 40px",
-        fontFamily: '"Roboto Mono", monospace',
-        color: "#1c618c",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "650px",
-          margin: "0 auto",
-          backgroundColor: "#ffffff",
-          border: "0.2vw solid #1c618c",
-          borderRadius: "1.2vw",
-          padding: "2.5vw",
-          boxShadow: "0 0.3vw 1.2vw rgba(0,80,160,0.10)",
-        }}
-      >
-        <h1 style={{ marginBottom: "2vw", fontSize: "2rem" }}>
+  style={{
+    position: "fixed",
+    inset: 0,
+    overflow: "hidden",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: "130px",
+    boxSizing: "border-box",
+    zIndex: 5,
+  }}
+>
+
+     <div
+  style={{
+    width: "650px",
+    padding: "24px 34px",
+    borderRadius: "25px",
+    border: "3px solid #15689b",
+    background: "#f7f7f7",
+    color: "#15689b",
+    fontFamily: '"Roboto Mono", monospace',
+    boxShadow: "0 0 20px rgba(0,0,0,0.1)",
+  }}
+>
+
+        <h1
+          style={{
+            textAlign:"center",
+            fontSize:"2.5rem",
+            marginBottom:"20px"
+          }}
+        >
           Edit Profile
         </h1>
 
         <form onSubmit={handleSubmit}>
 
-            <input
-  name="userName"
-  placeholder="Username"
-  value={formData.userName}
-  onChange={handleChange}
-  style={inputStyle}
-  required
-/>
+          <input
+            name="userName"
+            value={formData.userName}
+            placeholder="Username"
+            onChange={handleChange}
+            style={inputStyle}
+          />
 
           <input
             name="userFName"
-            placeholder="First Name"
             value={formData.userFName}
+            placeholder="First Name"
             onChange={handleChange}
             style={inputStyle}
-            required
           />
 
           <input
             name="userLName"
-            placeholder="Last Name"
             value={formData.userLName}
+            placeholder="Last Name"
             onChange={handleChange}
             style={inputStyle}
-            required
           />
 
           <input
             name="userEmail"
-            type="email"
-            placeholder="Email"
             value={formData.userEmail}
+            placeholder="Email"
             onChange={handleChange}
             style={inputStyle}
-            required
           />
 
           <input
             name="userAddress"
-            placeholder="Address"
             value={formData.userAddress}
+            placeholder="Address"
             onChange={handleChange}
             style={inputStyle}
           />
 
           <input
             name="userContact"
-            placeholder="Contact Number"
             value={formData.userContact}
+            placeholder="Contact Number"
             onChange={handleChange}
             style={inputStyle}
-            maxLength={11}
-            required
           />
 
-          <div style={{ display: "flex", gap: "1vw", marginTop: "1vw" }}>
+          <div
+            style={{
+              display:"flex",
+              gap:"16px",
+              marginTop:"20px"
+            }}
+          >
+
             <button
               type="submit"
               style={{
-                flex: 1,
-                padding: "0.9vw",
-                borderRadius: "0.7vw",
-                border: "none",
-                backgroundColor: "#1c618c",
-                color: "#fffbf4",
-                fontWeight: 700,
-                cursor: "pointer",
+                flex:1,
+                height:"50px",
+                border:"none",
+                borderRadius:"15px",
+                background:"#15689b",
+                color:"white",
+                fontWeight:"700",
+                cursor:"pointer"
               }}
             >
               Update
@@ -205,23 +269,39 @@ alert(
 
             <button
               type="button"
-              onClick={() => navigate("/profile")}
+              onClick={async()=>{
+
+                const confirmed=
+                await showConfirm(
+                  "Discard Changes?",
+                  "Unsaved changes will be lost."
+                );
+
+                if(confirmed){
+                  navigate("/profile");
+                }
+
+              }}
               style={{
-                flex: 1,
-                padding: "0.9vw",
-                borderRadius: "0.7vw",
-                border: "0.15vw solid #1c618c",
-                backgroundColor: "transparent",
-                color: "#1c618c",
-                fontWeight: 700,
-                cursor: "pointer",
+                flex:1,
+                height:"50px",
+                border:"2px solid #15689b",
+                borderRadius:"15px",
+                background:"transparent",
+                color:"#15689b",
+                fontWeight:"700",
+                cursor:"pointer"
               }}
             >
               Back
             </button>
+
           </div>
+
         </form>
+
       </div>
+
     </main>
   );
 }

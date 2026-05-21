@@ -10,6 +10,12 @@ import wave2 from "../assets/bottom wave 2.png";
 import wave3 from "../assets/bottom wave 3.png";
 import wave4 from "../assets/bottom wave 4.png";
 import { getSessionUser, logoutSession } from "../utils/session";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showConfirm,
+} from "../utils/swal";
 
 const getLogoUrl = (brandName) => {
   if (!brandName) return ""; 
@@ -54,9 +60,9 @@ async function fetchData() {
         setBrands(responseBrands.data);
       } catch (error) {
         console.error("Failed to fetch data", error);
-      } finally {
-        setTimeout(() => setLoading(false), 1000);
-      }
+      } finally{
+   setLoading(false)
+}
     }
     fetchData();
 
@@ -71,6 +77,8 @@ async function fetchData() {
           (pos) => {
             const { latitude, longitude } = pos.coords;
             setLocationGranted(true);
+            setMyLat(latitude);
+            setMyLng(longitude);
             setMapSrc(
               `https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d13758.385273920467!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sgas%20station!5e0!3m2!1sen!2sph!4v1746668755734!5m2!1sen!2sph`
             );
@@ -96,34 +104,33 @@ async function fetchData() {
       return R * c;
     };
   
-    const topThreeNearest = useMemo(() => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const { latitude, longitude } = pos.coords;
-            setMyLat(latitude);
-            setMyLng(longitude);
-          },
-          () => {}
-        );
-      }
-      
-      if (!myLat || !myLng) return [];
-  
-      return locations
-        .map((location) => {
-          const brand = brands.find((b) => b._id === location.brandID);
-          const distance = getHaversineDistance(
-            myLat,
-            myLng,
-            location.stationLat,
-            location.stationLong
-          );
-          return { ...location, distance, brandLogo: getLogoUrl(brand?.brandDesc) };
-        })
-        .sort((a, b) => a.distance - b.distance);
-        
-    }, [myLat, myLng, locations, brands]);
+   const topThreeNearest = useMemo(() => {
+  if (myLat === null || myLng === null) return [];
+
+  return locations
+    .map((location) => {
+      const brand = brands.find(
+        (b) => b._id === location.brandID
+      );
+
+      const distance = getHaversineDistance(
+        myLat,
+        myLng,
+        location.stationLat,
+        location.stationLong
+      );
+
+      return {
+        ...location,
+        distance,
+        brandLogo: getLogoUrl(brand?.brandDesc),
+      };
+    })
+    .sort((a,b)=>a.distance-b.distance)
+    .slice(0,3);
+
+},[myLat,myLng,locations,brands]);
+
   
     useEffect(() => { handleGetLocation(); }, []);
   
@@ -173,11 +180,36 @@ async function fetchData() {
       Locations: goToLocations,
       Nearest: () => { setMenuOpen(false); openSearch("nearest"); },
       [user?.userName]: () => { setMenuOpen(false); navigate("/profile"); },
-      "Switch as Admin": () => {
-        setMenuOpen(false);
-        if(user?.userPermissionLevel >= 50){ navigate("/admin"); }
-      },
-      "Log Out": () => { setMenuOpen(false); logoutSession(); navigate("/login"); },
+      "Switch as Admin": async () => {
+
+setMenuOpen(false);
+
+await showSuccess(
+   "Admin Access",
+   "Redirecting to dashboard..."
+);
+
+navigate("/admin");
+},
+      "Log Out": async () => {
+   setMenuOpen(false);
+
+   const confirmed = await showConfirm(
+      "Log Out?",
+      "Are you sure you want to leave your account?"
+   );
+
+   if(!confirmed) return;
+
+   logoutSession();
+
+   await showSuccess(
+      "Logged Out",
+      "See you again soon!"
+   );
+
+   navigate("/login");
+},
       "Log In": () => { setMenuOpen(false); navigate("/login"); }
     };
   

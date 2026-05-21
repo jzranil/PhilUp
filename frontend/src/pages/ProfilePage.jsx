@@ -1,5 +1,11 @@
 import { getSessionUser, logoutSession } from "../utils/session";
 import { useNavigate } from "react-router-dom";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showConfirm,
+} from "../utils/swal";
 
 function ProfileField({ label, value }) {
   return (
@@ -36,11 +42,23 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  // 1. Defined the missing handleLogout function
-  const handleLogout = () => {
-    logoutSession();
-    navigate("/login");
-  };
+  const handleLogout = async () => {
+  const result = await showConfirm(
+    "Log Out?",
+    "Are you sure you want to leave PhilUP?",
+    "Log Out"
+  );
+
+  if (!result.isConfirmed) return;
+
+  await showSuccess(
+    "Logged Out",
+    "See you again soon!"
+  );
+
+  logoutSession();
+  navigate("/login");
+};
 
   const fields = [
     { label: "Username", value: user?.userName },
@@ -141,34 +159,6 @@ export default function ProfilePage() {
           </button>
 
           <div style={{ borderTop: "0.15vw solid #c8e0f0", margin: "0.5vw 0" }} />
-
-          <p
-            style={{
-              fontSize: "0.8vw",
-              fontFamily: '"Roboto Mono", monospace',
-              color: "#5a8ab0",
-              fontWeight: 700,
-            }}
-          >
-            ACCOUNT STATS
-          </p>
-
-          <div
-            style={{
-              backgroundColor: "#e8f4fc",
-              borderRadius: "0.6vw",
-              padding: "0.6vw 0.8vw",
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            <span style={{ fontSize: "0.8vw", color: "#2a6aaa" }}>
-              Stations Visited
-            </span>
-            <span style={{ fontSize: "1vw", fontWeight: 700, color: "#1c618c" }}>
-              12
-            </span>
-          </div>
 
           <div
             style={{

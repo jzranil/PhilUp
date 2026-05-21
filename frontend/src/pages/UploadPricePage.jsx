@@ -1,6 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import shellLogo from "../assets/brand-images/ShellLogo.png";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showConfirm,
+} from "../utils/swal";
 
 // MOCK API data
 const MOCK_STATION = {
@@ -54,10 +61,46 @@ export default function UploadPricePage() {
 
   const handleProposedChange = (id, val) => setProposed(p => ({ ...p, [id]: val }));
   
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+  const hasInput = Object.values(proposed).some(
+    (value) => value && value.trim() !== ""
+  );
+
+  if (!hasInput) {
+    showWarning(
+      "No Price Entered",
+      "Please enter at least one proposed fuel price."
+    );
+    return;
+  }
+
+  const result = await showConfirm(
+    "Submit Price Change?",
+    "Your price change request will be sent for admin review.",
+    "Submit"
+  );
+
+  if (!result.isConfirmed) return;
+
+  try {
     setSubmitted(true);
-    // Send `proposed` payload alongside `locationId` to API
-  };
+
+    // temporary success, replace with API later
+    await showSuccess(
+      "Submitted",
+      "Your price change request has been sent for review."
+    );
+
+    navigate("/locations");
+  } catch (error) {
+    showError(
+      "Submission Failed",
+      error.response?.data?.message || "Failed to submit price change."
+    );
+  } finally {
+    setSubmitted(false);
+  }
+};
 
   return (
     <div style={{ display: "flex", gap: "20px", padding: "2vw", position: "relative", zIndex: 2 }}>

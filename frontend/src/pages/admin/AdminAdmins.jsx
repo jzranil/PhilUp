@@ -2,18 +2,34 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSessionUser } from "../../utils/session";
 import AdminTablePage from "./AdminTablePage";
+import { showWarning } from "../../utils/swal";
 
-export default function AdminAdmins(){
+export default function AdminAdmins() {
 
-const navigate=useNavigate();
+const navigate = useNavigate();
 
-useEffect(()=>{
- const user=getSessionUser();
+useEffect(() => {
 
- if(user?.userPermissionLevel<100){
-     navigate("/admin");
+async function checkAccess(){
+
+ const user = getSessionUser();
+
+ if(!user || user.userPermissionLevel < 100){
+
+    await showWarning(
+      "Access Denied",
+      "Only Super Admins can access this page."
+    );
+
+    navigate("/admin");
  }
-},[]);
 
-return <AdminTablePage tableKey="admins"/>
+}
+
+checkAccess();
+
+}, [navigate]);
+
+return <AdminTablePage tableKey="admins" />
+
 }

@@ -3,6 +3,15 @@ import axios from "axios";
 import AdminLayout from "./AdminLayout";
 import { getSessionUser } from "../../utils/session";
 import { useLoadScript, Autocomplete } from "@react-google-maps/api";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showConfirm,
+} from "../../utils/swal";
+
+const googleLibraries = ["places"];
+
 
 const getLogoUrl = (brandName) => {
   // Guard clause to handle missing or undefined brand names gracefully
@@ -118,8 +127,8 @@ export default function AdminTablePage({ tableKey }) {
   const [autocomplete, setAutocomplete] = useState(null);
 
 const { isLoaded } = useLoadScript({
-googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-  libraries: ["places"],
+  googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+  libraries: googleLibraries,
 });
 
 const [locationModalOpen, setLocationModalOpen] = useState(false);
@@ -305,7 +314,12 @@ columns: [
         columns: ["Price ID", "Station", "Address", "Fuel Type", "Price", "Date Updated", "Status", "Action"],
         rows: prices
           .map((price) => {
-            const station = locations.find((loc) => loc._id === price.stationLocID);
+const station = locations.find(
+  (loc) =>
+    loc._id === price.stationLocID &&
+    loc.isAccepted === 1 &&
+    loc.forEval === 0
+);
             const brand = station ? brands.find((b) => b._id === station.brandID) : null;
             const user = users.find((u) => u._id === price.uploadedBy);
             const fuelType = fuelTypes.find((ft) => ft._id === price.fuelTypeID);
@@ -481,17 +495,87 @@ role:
     return;
   }
 
-  if (tableKey === "registered-locations" && action === "remove") {
-    await axios.delete(`http://localhost:9000/api/station-locations/${id}`);
-    setLocations((prev) => prev.filter((loc) => loc._id !== id));
-    return;
-  }
+  if (
+   tableKey==="registered-locations" &&
+   action==="remove"
+){
+
+try{
+
+ const confirmDelete=await showConfirm(
+   "Remove Station?",
+   "This gas station will be permanently removed."
+ );
+
+ if(!confirmDelete) return;
+
+ await axios.delete(
+   `http://localhost:9000/api/station-locations/${id}`
+ );
+
+ setLocations(prev =>
+    prev.filter(
+      loc=>loc._id!==id
+    )
+ );
+
+ await showSuccess(
+   "Removed",
+   "Gas station removed successfully."
+ );
+
+}catch(error){
+
+ console.log(error);
+
+ await showError(
+   "Delete Failed",
+   "Unable to remove gas station."
+ );
+
+}
+
+return;
+
+}
 
   if (tableKey === "gas-prices" && action === "remove") {
-    await axios.delete(`http://localhost:9000/api/fuel-prices/${id}`);
-    setPrices((prev) => prev.filter((p) => p._id !== id));
-    return;
-  }
+
+try{
+
+ const confirmDelete = await showConfirm(
+   "Remove Price?",
+   "This fuel price will be permanently removed."
+ );
+
+ if(!confirmDelete) return;
+
+ await axios.delete(
+   `http://localhost:9000/api/fuel-prices/${id}`
+ );
+
+ setPrices(prev =>
+   prev.filter(p=>p._id!==id)
+ );
+
+ await showSuccess(
+   "Removed",
+   "Fuel price removed successfully."
+ );
+
+}catch(error){
+
+ console.log(error);
+
+ await showError(
+   "Delete Failed",
+   "Unable to remove fuel price."
+ );
+
+}
+
+return;
+}
 
   if (tableKey === "registered-users" || tableKey === "admins") {
     const user = users.find((u) => u._id === id);
@@ -501,25 +585,36 @@ role:
       const currentUser = getSessionUser();
 
       if (user._id === currentUser?._id) {
-        alert("You cannot delete your own account.");
+await showWarning(
+  "Action Not Allowed",
+  "You cannot delete your own account."
+);
         return;
       }
 
       const superAdmins = users.filter((u) => u.userPermissionLevel === 100);
 
       if (user.userPermissionLevel === 100 && superAdmins.length === 1) {
-        alert("Cannot delete the only Super Admin");
+        await showWarning(
+          "Action Not Allowed",
+          "Cannot delete the only Super Admin"
+        );
         return;
       }
 
-      const confirmDelete = window.confirm(
-        "Are you sure you want to delete this user?"
-      );
+     const confirmDelete = await showConfirm(
+ "Delete User?",
+ "This action cannot be undone."
+);
 
-      if (!confirmDelete) return;
+if(!confirmDelete) return;
 
       await axios.delete(`http://localhost:9000/api/users/${id}`);
       setUsers((prev) => prev.filter((u) => u._id !== id));
+      await showSuccess(
+ "Deleted",
+ "User removed successfully."
+);
       return;
     }
 
@@ -547,51 +642,121 @@ role:
 };
 
 const handleEditUserSave = async () => {
-  if (!selectedUser) return;
 
-  const res = await axios.put(
-    `http://localhost:9000/api/users/${selectedUser._id}`,
-    editForm
-  );
+try{
 
-  const updatedUser = res.data.user || res.data;
+ const confirmEdit=await showConfirm(
+   "Save Changes?",
+   "User information will be updated."
+ );
 
-  setUsers((prev) =>
-    prev.map((u) => (u._id === selectedUser._id ? updatedUser : u))
-  );
+ if(!confirmEdit) return;
 
-  setEditModalOpen(false);
-  setEditForm({
-    userName: "",
-    userFName: "",
-    userLName: "",
-    userEmail: "",
-    userContact: "",
-    userAddress: "",
-  });
-  setSelectedUser(null);
+ if(!selectedUser) return;
+
+ const res=await axios.put(
+   `http://localhost:9000/api/users/${selectedUser._id}`,
+   editForm
+ );
+
+ const updatedUser=res.data.user||res.data;
+
+ setUsers(prev =>
+   prev.map(u =>
+      u._id===selectedUser._id
+      ? updatedUser
+      : u
+   )
+ );
+
+ setEditModalOpen(false);
+
+ setEditForm({
+   userName:"",
+   userFName:"",
+   userLName:"",
+   userEmail:"",
+   userContact:"",
+   userAddress:"",
+ });
+
+ setSelectedUser(null);
+
+ await showSuccess(
+   "Updated",
+   "User profile updated successfully."
+ );
+
+}catch(error){
+
+ await showError(
+   "Update Failed",
+   "Unable to update user."
+ );
+
+}
+
 };
 
 const handleRoleSave = async () => {
-  if (!selectedUser) return;
+ try{
 
-  const res = await axios.patch(
-    `http://localhost:9000/api/users/${selectedUser._id}/permissions`,
-    { userPermissionLevel: Number(selectedRole) }
-  );
+   if(!selectedUser) return;
 
-  const updatedUser = res.data.user || res.data;
+   const confirmRole = await showConfirm(
+   "Change Role?",
+   "This user's permissions will be updated."
+);
 
-  setUsers((prev) =>
-    prev.map((u) => (u._id === selectedUser._id ? updatedUser : u))
-  );
+if(!confirmRole) return;
 
-  setRoleModalOpen(false);
-  setSelectedRole(1);
-  setSelectedUser(null);
+   const res=await axios.patch(
+      `http://localhost:9000/api/users/${selectedUser._id}/permissions`,
+      {
+         userPermissionLevel:Number(selectedRole)
+      }
+   );
+
+   const updatedUser=res.data.user||res.data;
+
+   setUsers(prev =>
+      prev.map(u =>
+         u._id===selectedUser._id
+         ? updatedUser
+         : u
+      )
+   );
+
+setRoleModalOpen(false);
+setSelectedRole(1);
+setSelectedUser(null);
+
+   await showSuccess(
+      "Role Updated",
+      "User permissions updated."
+   );
+
+ }catch(error){
+
+   await showError(
+      "Update Failed",
+      "Unable to update role."
+   );
+
+ }
 };
 
 const handleSaveLocation = async () => {
+  const confirmSave=await showConfirm(
+   modalMode==="add"
+      ? "Submit Request?"
+      : "Save Changes?",
+   modalMode==="add"
+      ? "Gas Station location will be sent for review."
+      : "Gas Station location changes will be saved."
+);
+
+if(!confirmSave) return;
   try {
     if (modalMode === "add") {
       const res = await axios.post(
@@ -602,7 +767,10 @@ const handleSaveLocation = async () => {
     forEval: 1,
   }
 );
-alert("Submitted for review successfully.");
+await showSuccess(
+ "Submitted",
+ "Gas Station location request submitted for review."
+);
     } else {
       if (!selectedRecord) return;
 
@@ -620,17 +788,34 @@ alert("Submitted for review successfully.");
           loc._id === selectedRecord._id ? res.data : loc
         )
       );
+      await showSuccess(
+ "Updated",
+ "Gas station updated successfully."
+);
     }
 
     setLocationModalOpen(false);
     setSelectedRecord(null);
   } catch (error) {
     console.log(error);
-    alert("Failed saving station");
+    await showError(
+      "Save Failed",
+      "Unable to save gas station."
+    );
   }
 };
 
 const handleSavePrice = async () => {
+  const confirmSave=await showConfirm(
+   modalMode==="add"
+      ? "Submit Price?"
+      : "Save Changes?",
+   modalMode==="add"
+      ? "Fuel price will be submitted."
+      : "Fuel price changes will be saved."
+);
+
+if(!confirmSave) return;
   try {
     if (modalMode === "add") {
       const res = await axios.post(
@@ -641,7 +826,10 @@ const handleSavePrice = async () => {
     forEval: 1,
   }
 );
-alert("Submitted for review successfully.");
+await showSuccess(
+ "Submitted",
+ "Price request submitted for review."
+);
     } else {
       if (!selectedRecord) return;
 
@@ -659,13 +847,20 @@ alert("Submitted for review successfully.");
           price._id === selectedRecord._id ? res.data : price
         )
       );
+      await showSuccess(
+ "Updated",
+ "Fuel price updated successfully."
+);
     }
 
     setPriceModalOpen(false);
     setSelectedRecord(null);
   } catch (error) {
     console.log(error);
-    alert("Failed saving fuel price");
+    await showError(
+      "Save Failed",
+      "Unable to save fuel price."
+    );
   }
 };
 
@@ -898,32 +1093,36 @@ placeholder={
       {isLoaded ? (
   <Autocomplete
     onLoad={(auto) => setAutocomplete(auto)}
-    onPlaceChanged={() => {
-      const place = autocomplete?.getPlace();
+    onPlaceChanged={async () => {
+ const place = autocomplete?.getPlace();
 
-      if (!place?.geometry?.location) {
-        alert("Please select a valid location from the dropdown.");
-        return;
-      }
+ if (!place?.geometry?.location) {
+   await showWarning(
+      "Invalid Location",
+      "Please select a location from suggestions."
+   );
+   return;
+ }
 
-      setLocationForm({
-        ...locationForm,
-        stationAddress: place.formatted_address || place.name || "",
-        stationLat: place.geometry.location.lat(),
-        stationLong: place.geometry.location.lng(),
-      });
-    }}
+ setLocationForm(prev => ({
+   ...prev,
+   stationAddress:
+      place.formatted_address || place.name || "",
+   stationLat: place.geometry.location.lat(),
+   stationLong: place.geometry.location.lng(),
+}));
+}}
   >
     <input
       style={modalInputStyle}
       placeholder="Search station address"
       value={locationForm.stationAddress}
-      onChange={(e) =>
-        setLocationForm({
-          ...locationForm,
-          stationAddress: e.target.value,
-        })
-      }
+      onChange={(e)=>
+ setLocationForm(prev=>({
+    ...prev,
+    stationAddress:e.target.value
+ }))
+}
     />
   </Autocomplete>
 ) : (
@@ -973,14 +1172,17 @@ placeholder={
         onChange={(e) => setPriceForm({ ...priceForm, stationLocID: e.target.value })}
       >
         <option value="">Select Station</option>
-        {locations.map((loc) => {
-          const brand = brands.find((b) => b._id === loc.brandID);
-          return (
-            <option key={loc._id} value={loc._id}>
-              {brand?.brandDesc || "Unknown Station"} - {loc.stationAddress}
-            </option>
-          );
-        })}
+        {locations
+  .filter((loc) => loc.isAccepted === 1 && loc.forEval === 0)
+  .map((loc) => {
+    const brand = brands.find((b) => b._id === loc.brandID);
+
+    return (
+      <option key={loc._id} value={loc._id}>
+        {brand?.brandDesc || "Unknown Station"} - {loc.stationAddress}
+      </option>
+    );
+  })}
       </select>
 
       <select

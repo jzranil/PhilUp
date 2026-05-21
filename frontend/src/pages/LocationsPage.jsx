@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+
 // Replace with MOCK_STATIONS array
 const MOCK_STATIONS = [];
 
